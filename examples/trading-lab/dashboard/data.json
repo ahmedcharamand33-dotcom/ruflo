@@ -9,7 +9,8 @@
   "days": 1,
   "equity": 99933.38,
   "return": -0.000666,
-  "benchmark_60_40": 0.0,
+  "benchmark": 0.0,
+  "benchmark_name": "60/40",
   "max_drawdown": -0.000666,
   "holdings": {
    "stocks": 0.333,
