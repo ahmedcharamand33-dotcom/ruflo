@@ -20,7 +20,20 @@ import numpy as np
 import pandas as pd
 
 SHILLER_URL = "https://raw.githubusercontent.com/datasets/s-and-p-500/main/data/data.csv"
+GOLD_URL = "https://raw.githubusercontent.com/datasets/gold-prices/main/data/monthly.csv"
 CACHE_DIR = Path(__file__).resolve().parent.parent / "data"
+
+
+def _cached(url: str, name: str, refresh: bool = False) -> str:
+    cache = CACHE_DIR / name
+    if refresh or not cache.exists():
+        import requests
+
+        resp = requests.get(url, timeout=30)
+        resp.raise_for_status()
+        CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        cache.write_text(resp.text)
+    return cache.read_text()
 
 
 def _normalize(df: pd.DataFrame) -> pd.DataFrame:
@@ -55,15 +68,7 @@ def load_shiller(refresh: bool = False) -> pd.DataFrame:
     which flatters trend-following. Evaluate with ``execution_lag=2`` to
     neutralise most of it.
     """
-    cache = CACHE_DIR / "shiller_sp500.csv"
-    if refresh or not cache.exists():
-        import requests
-
-        resp = requests.get(SHILLER_URL, timeout=30)
-        resp.raise_for_status()
-        CACHE_DIR.mkdir(parents=True, exist_ok=True)
-        cache.write_text(resp.text)
-    raw = pd.read_csv(io.StringIO(cache.read_text()), parse_dates=["Date"]).set_index("Date")
+    raw = _shiller_raw(refresh)
     price = raw["SP500"].astype(float)
     # Recent rows report dividend 0.0 until Shiller fills them in; carry the last known value.
     div = raw["Dividend"].astype(float).replace(0.0, np.nan).ffill().fillna(0.0)
@@ -72,6 +77,55 @@ def load_shiller(refresh: bool = False) -> pd.DataFrame:
     df = pd.DataFrame({"close": tr, "price": price})
     df.index.name = "date"
     return _normalize(df)
+
+
+def _shiller_raw(refresh: bool = False) -> pd.DataFrame:
+    text = _cached(SHILLER_URL, "shiller_sp500.csv", refresh)
+    return pd.read_csv(io.StringIO(text), parse_dates=["Date"]).set_index("Date")
+
+
+def bond_total_return(yields_pct: pd.Series, maturity: float = 10.0) -> pd.Series:
+    """Total-return index of a constant-maturity par bond rebuilt from monthly yields.
+
+    Each month: buy a par bond paying the current yield, a month later revalue it
+    at the new yield with one month less to run (semi-annual coupons).
+    """
+    y = yields_pct.astype(float).replace(0.0, np.nan).ffill() / 100.0
+    prev, cur = y.shift(1), y
+    n = 2.0 * (maturity - 1.0 / 12.0)
+    disc = (1.0 + cur / 2.0) ** (-n)
+    price = prev / cur * (1.0 - disc) + disc
+    ret = (price - 1.0 + prev / 12.0).fillna(0.0)
+    return (1.0 + ret).cumprod()
+
+
+def load_history(refresh: bool = False) -> pd.DataFrame:
+    """Monthly total-return indexes for US stocks, 10y Treasuries and gold, 1871-today.
+
+    Caveats: all three are monthly averages (use execution_lag=2); gold was
+    pegged until 1971, so it behaves like cash before then.
+    """
+    raw = _shiller_raw(refresh)
+    gold = pd.read_csv(io.StringIO(_cached(GOLD_URL, "gold_monthly.csv", refresh)))
+    gold = pd.Series(gold["Price"].astype(float).values,
+                     index=pd.to_datetime(gold["Date"]), name="gold")
+    df = pd.DataFrame({
+        "stocks": load_shiller(refresh)["close"],
+        "bonds": bond_total_return(raw["Long Interest Rate"]),
+    }).join(gold, how="inner").dropna()
+    df.index.name = "date"
+    return df / df.iloc[0]
+
+
+def load_universe(spec: str) -> pd.DataFrame:
+    """Multi-asset closes: 'history' or 'yahoo:SPY,IEF,GLD' (daily, your machine)."""
+    kind, _, arg = spec.partition(":")
+    if kind == "history":
+        return load_history()
+    if kind == "yahoo":
+        cols = {t: load_yahoo(t)["close"] for t in arg.split(",")}
+        return pd.DataFrame(cols).dropna()
+    raise ValueError(f"unknown universe {spec!r}")
 
 
 def load_yahoo(ticker: str, start: str = "1990-01-01") -> pd.DataFrame:

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from collections import Counter
 
-from .metrics import deflated_sharpe, sharpe, summary
+from .metrics import consistency, deflated_sharpe, sharpe, summary
 from .walkforward import WalkForwardResult
 
 CONFIDENCE = 0.95
@@ -76,3 +76,22 @@ def render(card: dict, title: str = "") -> str:
                ", ".join(f"{lbl} x{n}" for lbl, n in card["chosen"][:5]))
     out.append(f"VERDICT: {card['verdict']}")
     return "\n".join(out)
+
+
+def portfolio_table(runs: dict, bpy: int, start: str | None = None, end: str | None = None,
+                    hurdle: str = "60/40", n_trials: int = 1) -> str:
+    """One row per portfolio: return, risk, consistency, and P(Sharpe beats the hurdle)."""
+    sl = slice(start, end)
+    base = runs[hurdle].result.returns.loc[sl]
+    head = (f"{'portfolio':22}{'CAGR':>7}{'vol':>7}{'Sharpe':>7}{'maxDD':>7}{'+yrs':>6}"
+            f"{'worst yr':>9}{'underwater':>11}{'P(beat ' + hurdle + ')':>16}")
+    rows = [head]
+    for name, run in runs.items():
+        r = run.result.returns.loc[sl]
+        s, c = summary(r, bpy), consistency(r, bpy)
+        p = "" if name in (hurdle,) or name.endswith(" only") else \
+            f"{deflated_sharpe(r, n_trials, sharpe(base, 1)):.0%}"
+        rows.append(f"{name:22}{s['cagr']:>7.1%}{s['vol']:>7.1%}{s['sharpe']:>7.2f}{s['max_dd']:>7.0%}"
+                    f"{c['pos_years']:>6.0%}{c['worst_year']:>9.0%}{c['underwater_yrs']:>9.1f}y{p:>16}")
+    idx = base.index
+    return f"-- {idx[0].date()} -> {idx[-1].date()} ({len(idx) / bpy:.0f} yrs) --\n" + "\n".join(rows)

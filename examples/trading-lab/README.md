@@ -10,7 +10,7 @@ It does not promise profits. It promises not to lie to you about them.
 ```bash
 cd examples/trading-lab
 pip install -r requirements.txt          # pandas, numpy, requests, pytest (+ yfinance optional)
-python -m pytest -q                      # 24 integrity tests
+python -m pytest -q                      # integrity tests
 
 # Is there an edge? (155 years of S&P 500, out-of-sample only)
 python -m trading_lab evaluate --source shiller --lag 2
@@ -60,6 +60,27 @@ Reading: trend-following roughly **halved the worst crash** but gave up return.
 Most of the apparent Sharpe edge comes from Shiller's monthly *averaged* prices,
 which manufacture momentum. Cash earns 0% here, which slightly understates
 strategies that sit out. The next step is to re-run on daily total-return data.
+
+## Consistent returns: multi-asset portfolios (`portfolio.py`)
+
+```bash
+python -m trading_lab portfolio                          # stocks / 10y Treasuries / gold, 1872-2026
+python -m trading_lab portfolio --universe yahoo:SPY,IEF,GLD --lag 1   # daily ETFs, your machine
+```
+
+No leverage: every rule keeps exposure at or below 100%, and the engine rejects anything else.
+The trend and volatility windows (10 and 12 months) are textbook values fixed in advance, not tuned.
+
+| Since 2008 (after the rules were published) | CAGR | Sharpe | Max DD | Worst year | P(beats 60/40) |
+|---|---|---|---|---|---|
+| Stocks only | 11.3% | 0.88 | -45% | -39% | |
+| 60/40 | 8.1% | 1.05 | -26% | -19% | |
+| **Equal weight + trend** | 6.4% | **1.27** | **-6%** | **-4%** | 46% |
+
+Over 1972-2026: CAGR 8.1% vs 11.2% for stocks, max DD -11% vs -49%, positive in 87% of years.
+The trade-off is plain: roughly a third less return for about a tenth of the crash risk. The higher
+Sharpe is consistent across periods but not yet statistically proven against 60/40. Cash earns
+0% in these tests, which understates the trend rules (they hold cash about a third of the time).
 
 ## Known limits
 

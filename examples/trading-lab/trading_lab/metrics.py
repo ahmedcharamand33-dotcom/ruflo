@@ -86,3 +86,18 @@ def expected_max_sharpe(n_trials: int, n_obs: int) -> float:
 def deflated_sharpe(returns: pd.Series, n_trials: int, sr_benchmark: float = 0.0) -> float:
     """P(true per-bar Sharpe > benchmark), after charging for picking the best of n_trials."""
     return probabilistic_sharpe(returns, sr_benchmark + expected_max_sharpe(n_trials, len(returns)))
+
+
+def consistency(returns: pd.Series, bars_per_year: int) -> dict:
+    """How smooth the ride was: the numbers that decide whether you stick with a strategy."""
+    equity = (1.0 + returns).cumprod()
+    yearly = (1.0 + returns).groupby(returns.index.year).prod() - 1.0
+    rolling = equity.pct_change(bars_per_year).dropna()
+    under = equity < equity.cummax()
+    runs = under.groupby((~under).cumsum()).sum()
+    return {
+        "pos_years": float((yearly > 0).mean()),
+        "worst_year": float(yearly.min()),
+        "pos_12m": float((rolling > 0).mean()) if len(rolling) else 0.0,
+        "underwater_yrs": float(runs.max() / bars_per_year) if len(runs) else 0.0,
+    }
