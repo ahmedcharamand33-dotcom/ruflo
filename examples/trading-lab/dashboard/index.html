@@ -183,7 +183,7 @@ function render(d) {
   $("equity").textContent = money(p.equity);
   $("ret").textContent = pct(p.return, 2);
   $("ret").className = "value " + (p.return >= 0 ? "pos" : "neg");
-  $("bench").textContent = `60/40 over same period: ${pct(p.benchmark_60_40, 2)}`;
+  $("bench").textContent = `${p.benchmark_name} over same period: ${pct(p.benchmark, 2)}`;
   $("dd").textContent = pctPlain(p.max_drawdown, 2);
   $("ddbar").style.width = Math.min(100, Math.abs(p.max_drawdown) / d.max_dd_limit * 100) + "%";
 

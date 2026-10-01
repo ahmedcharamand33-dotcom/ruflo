@@ -103,6 +103,21 @@ python -m trading_lab autopilot ... --resume "reviewed: <why it is safe to resta
   internet access (needs `yfinance`).
 - Paper only. Connecting real money is the owner's decision, after paper results earn it.
 
+## Single-stock sleeve (MSFT)
+
+A separate $10k paper account runs the same trend rule on one stock: hold MSFT while it is
+above its 10-month average, otherwise cash. Its safety stop is -25%, because one stock swings
+about twice as much as the portfolio. MSFT was chosen for its 40-year history, liquidity and
+diversified business. Its backtest is flattered by hindsight (we know it won), so it is judged
+mainly on whether the rule cuts the crashes.
+
+```bash
+python -m trading_lab evaluate --source stock:MSFT
+python -m trading_lab autopilot --universe stock:MSFT --journal paper/msft.jsonl --cash 10000 --max-dd 0.25
+```
+
+Needs network access to `stooq.com` (or Yahoo: `query1/query2.finance.yahoo.com`, `fc.yahoo.com`).
+
 ## Known limits
 
 - Single asset, long/flat only. No shorting, leverage or portfolio sizing yet.

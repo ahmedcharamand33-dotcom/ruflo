@@ -52,6 +52,7 @@ def main(argv: list[str] | None = None) -> int:
     au.add_argument("--journal", type=Path, required=True)
     au.add_argument("--rule", default=pp.DEFAULT_RULE, choices=list(pf.candidates()))
     au.add_argument("--max-dd", type=float, default=0.15, help="circuit breaker, fraction below peak")
+    au.add_argument("--cash", type=float, default=100_000.0, help="starting cash for a new account")
     au.add_argument("--resume", metavar="NOTE", help="clear a HALT (after a human/Claude review)")
     st = sub.add_parser("status")
     st.add_argument("--journal", type=Path, required=True)
@@ -70,7 +71,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "autopilot":
         if args.resume:
             pp.resume(args.journal, args.resume)
-        print(pp.step(load_universe(args.universe), args.journal, args.rule, max_dd=args.max_dd))
+        print(pp.step(load_universe(args.universe), args.journal, args.rule, cash=args.cash, max_dd=args.max_dd))
         return 0
     if args.cmd == "status":
         print(_status_markdown(pp.report(args.journal)))
@@ -116,7 +117,7 @@ def _status_markdown(rep: dict) -> str:
              "| | value |", "|---|---|",
              f"| Equity | ${rep['equity']:,.2f} |",
              f"| Return | {rep['return']:+.2%} |",
-             f"| 60/40 over same days | {rep['benchmark_60_40']:+.2%} |",
+             f"| {rep['benchmark_name']} over same days | {rep['benchmark']:+.2%} |",
              f"| Max drawdown | {rep['max_drawdown']:.2%} |",
              f"| Cash | {rep['cash_weight']:.1%} |"]
     lines += [f"| {k} | {v:.1%} |" for k, v in rep["holdings"].items()]

@@ -8,7 +8,8 @@ buy-and-hold and overstate anything that sits in cash.
 Sources (``load(spec)``):
     shiller            Monthly S&P 500 total-return index, 1871-today (GitHub).
     csv:<path>         Any CSV with a date column and close / adj close.
-    yahoo:<TICKER>     Daily bars via the optional ``yfinance`` package.
+    yahoo:<TICKER>     Daily bars via the ``yfinance`` package.
+    stock:<TICKER>     Daily bars from stooq, falling back to Yahoo.
     synthetic[:seed]   Random-walk prices for tests (no edge exists by design).
 """
 from __future__ import annotations
@@ -20,6 +21,7 @@ import numpy as np
 import pandas as pd
 
 SHILLER_URL = "https://raw.githubusercontent.com/datasets/s-and-p-500/main/data/data.csv"
+STOOQ_URL = "https://stooq.com/q/d/l/?s={symbol}&i=d"
 GOLD_URL = "https://raw.githubusercontent.com/datasets/gold-prices/main/data/monthly.csv"
 CACHE_DIR = Path(__file__).resolve().parent.parent / "data"
 
@@ -44,7 +46,7 @@ def _normalize(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def load_csv(path: str | Path) -> pd.DataFrame:
+def load_csv(path) -> pd.DataFrame:
     raw = pd.read_csv(path)
     raw.columns = [str(c).strip().lower() for c in raw.columns]
     date_col = "date" if "date" in raw.columns else raw.columns[0]
@@ -117,11 +119,40 @@ def load_history(refresh: bool = False) -> pd.DataFrame:
     return df / df.iloc[0]
 
 
+def parse_stooq(text: str) -> pd.DataFrame:
+    if not text.lstrip().lower().startswith("date"):
+        raise RuntimeError(f"stooq returned no price table: {text.strip()[:80]!r}")
+    return load_csv(io.StringIO(text))
+
+
+def load_stooq(ticker: str) -> pd.DataFrame:
+    """Daily US stock bars from stooq (split-adjusted; dividends may be excluded)."""
+    import requests
+
+    resp = requests.get(STOOQ_URL.format(symbol=f"{ticker.lower()}.us"), timeout=30)
+    resp.raise_for_status()
+    return parse_stooq(resp.text)
+
+
+def load_stock(ticker: str) -> pd.DataFrame:
+    """Daily bars for one US stock: stooq first, Yahoo (yfinance) as fallback."""
+    try:
+        return load_stooq(ticker)
+    except Exception as stooq_err:
+        try:
+            return load_yahoo(ticker)
+        except Exception as yahoo_err:
+            raise RuntimeError(f"no price source reachable for {ticker}: "
+                               f"stooq: {stooq_err}; yahoo: {yahoo_err}") from yahoo_err
+
+
 def load_universe(spec: str) -> pd.DataFrame:
-    """Multi-asset closes: 'history' or 'yahoo:SPY,IEF,GLD' (daily, your machine)."""
+    """Closes by column: 'history', 'stock:MSFT[,AAPL]' or 'yahoo:SPY,IEF,GLD'."""
     kind, _, arg = spec.partition(":")
     if kind == "history":
         return load_history()
+    if kind == "stock":
+        return pd.DataFrame({t: load_stock(t)["close"] for t in arg.split(",")}).dropna()
     if kind == "yahoo":
         cols = {t: load_yahoo(t)["close"] for t in arg.split(",")}
         return pd.DataFrame(cols).dropna()
@@ -165,6 +196,8 @@ def load(spec: str) -> pd.DataFrame:
         return load_csv(arg)
     if kind == "yahoo":
         return load_yahoo(arg)
+    if kind == "stock":
+        return load_stock(arg)
     if kind == "synthetic":
         return synthetic_prices(seed=int(arg or 0))
     raise ValueError(f"unknown data source {spec!r}")

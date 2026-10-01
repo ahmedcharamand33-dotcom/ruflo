@@ -126,7 +126,7 @@ def resume(journal: Path, note: str) -> None:
 
 
 def report(journal: Path) -> dict:
-    """Paper results so far, next to a 60/40 of the first two assets over the same days."""
+    """Paper results so far, next to 60/40 of the first two assets (or buy & hold of a single one)."""
     events = read_events(journal)
     book = replay(events)
     if not book.marks:
@@ -135,8 +135,12 @@ def report(journal: Path) -> dict:
                    index=pd.to_datetime([m["date"] for m in book.marks]))
     px = pd.DataFrame([m["prices"] for m in book.marks], index=eq.index)
     rets = px.pct_change().fillna(0.0)
-    a, b = px.columns[:2]
-    bench = (1.0 + 0.6 * rets[a] + 0.4 * rets[b]).cumprod()
+    if px.shape[1] >= 2:
+        a, b = px.columns[:2]
+        bench, bench_name = (1.0 + 0.6 * rets[a] + 0.4 * rets[b]).cumprod(), "60/40"
+    else:
+        a = px.columns[0]
+        bench, bench_name = (1.0 + rets[a]).cumprod(), f"{a} buy & hold"
     start = events[0]["cash"]
     last = book.marks[-1]
     return {
@@ -144,7 +148,8 @@ def report(journal: Path) -> dict:
         "since": str(eq.index[0].date()), "as_of": str(eq.index[-1].date()), "days": len(eq),
         "equity": round(eq.iloc[-1], 2),
         "return": eq.iloc[-1] / start - 1.0,
-        "benchmark_60_40": float(bench.iloc[-1] - 1.0),
+        "benchmark": float(bench.iloc[-1] - 1.0),
+        "benchmark_name": bench_name,
         "max_drawdown": float((eq / eq.cummax().clip(lower=start) - 1.0).min()),
         "holdings": {k: round(q * last["prices"][k] / last["equity"], 3)
                      for k, q in book.shares.items() if abs(q) > 1e-9},
