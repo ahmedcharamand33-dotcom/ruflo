@@ -6,6 +6,7 @@
     portfolio    multi-asset test (stocks/bonds/gold) + today's target allocation
     autopilot    daily unattended paper-trading step for a portfolio rule
     status       paper-trading results so far (markdown)
+    dashboard    export the dashboard page's data (JSON)
 """
 from __future__ import annotations
 
@@ -54,8 +55,16 @@ def main(argv: list[str] | None = None) -> int:
     au.add_argument("--resume", metavar="NOTE", help="clear a HALT (after a human/Claude review)")
     st = sub.add_parser("status")
     st.add_argument("--journal", type=Path, required=True)
+    db = sub.add_parser("dashboard")
+    db.add_argument("--journal", type=Path, required=True)
+    db.add_argument("--out", type=Path, default=Path("dashboard/data.json"))
     args = ap.parse_args(argv)
 
+    if args.cmd == "dashboard":
+        from .dashboard import write
+        write(args.journal, args.out)
+        print(f"wrote {args.out}")
+        return 0
     if args.cmd == "portfolio":
         return _portfolio(args)
     if args.cmd == "autopilot":
