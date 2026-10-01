@@ -1,0 +1,5 @@
+{"type": "open", "cash": 100000.0, "rule": "equal weight + trend"}
+{"type": "fill", "date": "2026-08-01", "asset": "stocks", "shares": 0.028159792920831653, "price": 1182931.6786796642, "cost": 33.31111111111111, "reason": "monthly rebalance"}
+{"type": "fill", "date": "2026-08-01", "asset": "bonds", "shares": 30.412495351256997, "price": 1095.310027223212, "cost": 33.31111111111111, "reason": "monthly rebalance"}
+{"type": "rebalance", "date": "2026-08-01", "weights": {"stocks": 0.3333, "bonds": 0.3333, "gold": 0.0}}
+{"type": "mark", "date": "2026-08-01", "equity": 99933.37777777776, "cash": 33311.155555555546, "prices": {"stocks": 1182931.6786796642, "bonds": 1095.310027223212, "gold": 233.01637612255678}}

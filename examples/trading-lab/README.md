@@ -82,6 +82,27 @@ The trade-off is plain: roughly a third less return for about a tenth of the cra
 Sharpe is consistent across periods but not yet statistically proven against 60/40. Cash earns
 0% in these tests, which understates the trend rules (they hold cash about a third of the time).
 
+## Autopilot (hands-off paper trading)
+
+`paper/history.jsonl` is the live paper account: $100k opened 2026-10-01 running
+"equal weight + trend" on stocks / 10y Treasuries / gold. A scheduled Claude routine
+runs weekly: refreshes the monthly data, runs one idempotent step, commits the
+journal, and reports. Nothing to do on your side.
+
+```bash
+python -m trading_lab autopilot --universe history --journal paper/history.jsonl
+python -m trading_lab status --journal paper/history.jsonl
+python -m trading_lab autopilot ... --resume "reviewed: <why it is safe to restart>"
+```
+
+- Rebalances once per month; never borrows (cash stays >= 0 after costs).
+- Circuit breaker: if equity drops 15% below its peak (the backtest's worst since 1972
+  was -11%), it sells everything and HALTs until a deliberate `--resume`.
+- Paper fills use monthly-average prices, so this tracks the *rule*, not exact ETF
+  fills. For daily ETF execution: `--universe yahoo:SPY,IEF,GLD` on a machine with
+  internet access (needs `yfinance`).
+- Paper only. Connecting real money is the owner's decision, after paper results earn it.
+
 ## Known limits
 
 - Single asset, long/flat only. No shorting, leverage or portfolio sizing yet.
