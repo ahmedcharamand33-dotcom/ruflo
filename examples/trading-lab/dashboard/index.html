@@ -1,0 +1,225 @@
+<title>Trading Lab Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500&display=swap">
+<style>
+/* Layout: one ledger column; summary strip, allocation, then evidence (paper curve, backtest), then the log. */
+:root {
+  --bg: #f5f6f3; --surface: #ffffff; --ink: #1d2421; --muted: #5d6762; --rule: #dde1dc;
+  --accent: #1f6f5c; --stocks: #2f5d8a; --bonds: #8a6d2f; --gold: #b0892a; --cash: #a7b0ab;
+  --good: #1f7a4d; --warn: #b26a00; --bad: #b3261e;
+  --display: "Newsreader", Georgia, serif;
+  --sans: "IBM Plex Sans", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121614; --surface: #1a201d; --ink: #e6ebe7; --muted: #9aa59f; --rule: #2c3531;
+  --accent: #5cc3a6; --stocks: #7fa9d6; --bonds: #d1b06a; --gold: #e2c15a; --cash: #5e6a64;
+  --good: #5fcf92; --warn: #e8a33c; --bad: #f2786c; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #121614; --surface: #1a201d; --ink: #e6ebe7; --muted: #9aa59f; --rule: #2c3531;
+  --accent: #5cc3a6; --stocks: #7fa9d6; --bonds: #d1b06a; --gold: #e2c15a; --cash: #5e6a64;
+  --good: #5fcf92; --warn: #e8a33c; --bad: #f2786c; color-scheme: dark }
+
+body { background: var(--bg); color: var(--ink); font: 15px/1.55 var(--sans); }
+.wrap { max-width: 920px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 56px; display: grid; gap: 28px; }
+h1 { font: 500 clamp(28px, 5vw, 38px)/1.1 var(--display); margin: 0; text-wrap: balance; }
+h2 { font: 600 12px/1 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px; }
+p { margin: 0; max-width: 65ch; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+header { display: grid; gap: 8px; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; color: var(--muted); font-size: 13px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px;
+  font: 500 12px/1.4 var(--sans); border: 1px solid currentColor; }
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.pill.ok { color: var(--good); } .pill.halt { color: var(--bad); }
+
+.strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1px;
+  background: var(--rule); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; }
+.cell { background: var(--surface); padding: 16px; display: grid; gap: 4px; align-content: start; }
+.cell .label { font-size: 12px; color: var(--muted); }
+.cell .value { font: 500 24px/1.2 var(--mono); font-variant-numeric: tabular-nums; }
+.pos { color: var(--good); } .neg { color: var(--bad); }
+.gauge { height: 6px; border-radius: 3px; background: var(--rule); position: relative; margin-top: 6px; }
+.gauge i { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: var(--warn); }
+.gauge-scale { display: flex; justify-content: space-between; font: 11px var(--mono); color: var(--muted); }
+
+section { display: grid; gap: 4px; min-width: 0; }
+.alloc { display: flex; height: 34px; border-radius: 8px; overflow: hidden; border: 1px solid var(--rule); }
+.alloc span { display: block; min-width: 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 10px; font-size: 13px; }
+.legend b { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+
+.panel { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 16px; min-width: 0; }
+.chart { width: 100%; height: auto; display: block; }
+.chart text { fill: var(--muted); font: 11px var(--mono); }
+.chart .grid { stroke: var(--rule); stroke-width: 1; }
+.empty { padding: 28px 8px; text-align: center; color: var(--muted); }
+
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 520px; font-size: 14px; }
+th, td { text-align: right; padding: 8px 10px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { font-weight: 500; color: var(--muted); font-size: 12px; }
+tr.ours td { font-weight: 600; }
+.swatch { display: inline-block; width: 14px; height: 3px; border-radius: 2px; margin-right: 8px; vertical-align: middle; }
+
+.log { list-style: none; margin: 0; padding: 0; display: grid; }
+.log li { display: grid; grid-template-columns: 92px 1fr; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--rule); font-size: 14px; }
+.log li > span:first-child { font: 13px var(--mono); color: var(--muted); }
+.rules { display: grid; gap: 10px; font-size: 14px; }
+.rules div { display: grid; grid-template-columns: 150px 1fr; gap: 12px; }
+@media (max-width: 520px) { .rules div { grid-template-columns: 1fr; gap: 2px; } }
+footer { font-size: 12px; color: var(--muted); }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Paper portfolio</h1>
+    <div class="meta">
+      <span id="status" class="pill ok">Loading</span>
+      <span id="asof"></span>
+      <span id="rule"></span>
+    </div>
+  </header>
+
+  <div class="strip" id="strip">
+    <div class="cell"><span class="label">Account value</span><span class="value" id="equity">–</span><span class="label">started at $100,000</span></div>
+    <div class="cell"><span class="label">Return since start</span><span class="value" id="ret">–</span><span class="label" id="bench">–</span></div>
+    <div class="cell"><span class="label">Drop from peak</span><span class="value" id="dd">–</span>
+      <div class="gauge" aria-hidden="true"><i id="ddbar" style="width:0"></i></div>
+      <div class="gauge-scale"><span>0%</span><span>safety stop −15%</span></div></div>
+  </div>
+
+  <section>
+    <h2>Holding now</h2>
+    <div class="alloc" id="alloc" role="img" aria-label="Current allocation"></div>
+    <div class="legend" id="legend"></div>
+  </section>
+
+  <section>
+    <h2>Paper account over time</h2>
+    <div class="panel" id="paperPanel"></div>
+  </section>
+
+  <section>
+    <h2>What to expect: the same rule since 1972</h2>
+    <div class="panel">
+      <p class="muted" style="font-size:13px;margin-bottom:10px">Growth of $1, log scale, monthly. Tested on history, not live trading.</p>
+      <div id="btChart"></div>
+      <div class="table-wrap" style="margin-top:14px">
+        <table>
+          <thead><tr><th>Portfolio</th><th>Per year</th><th>Worst year</th><th>Worst drop</th><th>Up years</th><th>Longest below peak</th></tr></thead>
+          <tbody id="btTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Activity</h2>
+    <ul class="log" id="log"></ul>
+  </section>
+
+  <section>
+    <h2>How it is run</h2>
+    <div class="panel rules">
+      <div><strong>Rule</strong><span>A third each in US stocks, 10-year Treasuries and gold. Each is held only while it trades above its 10-month average; otherwise that third sits in cash. Rebalanced monthly. Never borrows.</span></div>
+      <div><strong>Safety stop</strong><span>If the account falls 15% below its peak, it sells everything and pauses until Claude reviews and restarts it with a written reason.</span></div>
+      <div><strong>Changes</strong><span>Claude changes the strategy only when a new version beats this one on long-run tests it was not tuned on. Never because of one bad month.</span></div>
+      <div><strong>Real money</strong><span>None. Around April 2027, after six months of paper results, Claude gives a clear recommendation.</span></div>
+    </div>
+  </section>
+
+  <footer id="foot">Refreshed weekly by Claude.</footer>
+</div>
+
+<script>
+const COLORS = { "stocks": "--stocks", "bonds": "--bonds", "gold": "--gold", "cash": "--cash" };
+const SERIES = { "stocks only": "--stocks", "60/40": "--bonds", "equal weight + trend": "--accent" };
+const NAMES = { "stocks only": "Stocks only", "60/40": "60% stocks / 40% bonds", "equal weight + trend": "This bot's rule" };
+const pct = (x, d = 1) => (x >= 0 ? "+" : "−") + Math.abs(x * 100).toFixed(d) + "%";
+const pctPlain = (x, d = 0) => (x < 0 ? "−" : "") + Math.abs(x * 100).toFixed(d) + "%";
+const money = x => "$" + x.toLocaleString("en-US", { maximumFractionDigits: 0 });
+const $ = id => document.getElementById(id);
+const fmtDate = s => new Date(s + (s.length === 7 ? "-01" : "") + "T00:00:00Z")
+  .toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
+
+function lineChart(el, series, labels, { log = false, height = 260 } = {}) {
+  const W = 860, H = height, L = 52, R = 14, T = 12, B = 26;
+  const all = Object.values(series).flat();
+  const f = log ? Math.log10 : (v => v);
+  let lo = f(Math.min(...all)), hi = f(Math.max(...all));
+  if (hi - lo < 1e-9) { lo -= 0.01; hi += 0.01; }
+  const n = labels.length;
+  const x = i => L + (n === 1 ? 0 : i / (n - 1)) * (W - L - R);
+  const y = v => T + (1 - (f(v) - lo) / (hi - lo)) * (H - T - B);
+  let ticks = [];
+  if (log) { for (let p = Math.floor(lo); p <= Math.ceil(hi); p++) for (const m of [1, 3]) { const v = m * 10 ** p; if (Math.log10(v) >= lo && Math.log10(v) <= hi) ticks.push(v); } }
+  else { for (let k = 0; k <= 4; k++) ticks.push(lo + (hi - lo) * k / 4); }
+  const tickLabel = v => log ? "$" + (v >= 1 ? v.toLocaleString("en-US") : v) : money(v);
+  let s = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img">`;
+  for (const v of ticks) s += `<line class="grid" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${tickLabel(v)}</text>`;
+  const step = Math.max(1, Math.round(n / 6));
+  for (let i = 0; i < n; i += step) s += `<text x="${x(i)}" y="${H - 6}" text-anchor="middle">${labels[i].slice(0, 4)}</text>`;
+  for (const [name, vals] of Object.entries(series)) {
+    const c = `var(${SERIES[name] || "--accent"})`;
+    const d = vals.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join("");
+    s += `<path d="${d}" fill="none" style="stroke:${c}" stroke-width="${name.includes("trend") ? 2.4 : 1.5}" stroke-linejoin="round"/>`;
+    const i = vals.length - 1;
+    s += `<circle cx="${x(i)}" cy="${y(vals[i])}" r="3.5" style="fill:${c}"/>`;
+  }
+  el.innerHTML = s + "</svg>";
+}
+
+function render(d) {
+  const p = d.paper;
+  const halted = (p.status || "").startsWith("HALTED");
+  $("status").textContent = halted ? "Paused by safety stop" : "Running";
+  $("status").className = "pill " + (halted ? "halt" : "ok");
+  $("asof").textContent = p.as_of ? `Data through ${fmtDate(p.as_of)} · opened ${fmtDate(p.since)}` : "No data yet";
+  $("rule").textContent = "Paper money only";
+  $("equity").textContent = money(p.equity);
+  $("ret").textContent = pct(p.return, 2);
+  $("ret").className = "value " + (p.return >= 0 ? "pos" : "neg");
+  $("bench").textContent = `${p.benchmark_name} over same period: ${pct(p.benchmark, 2)}`;
+  $("dd").textContent = pctPlain(p.max_drawdown, 2);
+  $("ddbar").style.width = Math.min(100, Math.abs(p.max_drawdown) / d.max_dd_limit * 100) + "%";
+
+  const alloc = { ...p.holdings, cash: p.cash_weight };
+  $("alloc").innerHTML = Object.entries(alloc).filter(([, w]) => w > 0.001)
+    .map(([k, w]) => `<span style="width:${w * 100}%;background:var(${COLORS[k] || "--cash"})" title="${k} ${pctPlain(w, 1)}"></span>`).join("");
+  $("legend").innerHTML = ["stocks", "bonds", "gold", "cash"].map(k =>
+    `<span><b style="background:var(${COLORS[k]})"></b>${k[0].toUpperCase() + k.slice(1)} <span class="num">${pctPlain(alloc[k] || 0, 0)}</span></span>`).join("");
+
+  if (d.marks.length < 2) {
+    $("paperPanel").innerHTML = `<div class="empty">The chart starts after the second monthly step. One month is recorded so far (${fmtDate(d.marks[0]?.date || p.since)}).</div>`;
+  } else {
+    lineChart($("paperPanel"), { "equal weight + trend": d.marks.map(m => m.equity) }, d.marks.map(m => m.date), { height: 220 });
+  }
+
+  const bt = d.backtest;
+  lineChart($("btChart"), bt.curves, bt.dates, { log: true });
+  $("btTable").innerHTML = Object.entries(bt.stats).map(([k, s]) => `
+    <tr class="${k.includes("trend") ? "ours" : ""}">
+      <td><span class="swatch" style="background:var(${SERIES[k]})"></span>${NAMES[k] || k}</td>
+      <td class="num">${pctPlain(s.cagr, 1)}</td><td class="num">${pctPlain(s.worst_year)}</td>
+      <td class="num">${pctPlain(s.max_dd)}</td><td class="num">${pctPlain(s.pos_years)}</td>
+      <td class="num">${s.underwater_yrs.toFixed(1)} yrs</td></tr>`).join("");
+
+  const label = e => e.type === "rebalance"
+    ? "Monthly rebalance: " + Object.entries(e.weights).map(([a, w]) => `${a} ${pctPlain(w)}`).join(", ")
+    : e.type === "fill" ? `${e.shares > 0 ? "Bought" : "Sold"} ${e.asset} · ${money(Math.abs(e.shares * e.price))} (cost ${money(e.cost)})`
+    : e.type === "halt" ? "Safety stop: " + e.reason : "Restarted: " + (e.note || "");
+  $("log").innerHTML = [...d.activity].reverse().map(e =>
+    `<li><span>${e.date ? fmtDate(e.date) : ""}</span><span>${label(e)}</span></li>`).join("")
+    || `<li><span></span><span class="muted">No activity yet.</span></li>`;
+  $("foot").textContent = `Refreshed weekly by Claude · last refresh ${d.generated}. Prices are monthly averages, so fills are approximate.`;
+}
+
+fetch("data.json").then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+  .then(render)
+  .catch(() => { $("status").textContent = "Data unavailable"; $("status").className = "pill halt";
+    $("foot").textContent = "The data file could not be loaded. Claude refreshes it weekly; check back after the next update."; });
+</script>
