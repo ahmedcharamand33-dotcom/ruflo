@@ -3,3 +3,7 @@
 {"type": "fill", "date": "2026-08-01", "asset": "bonds", "shares": 30.412495351256997, "price": 1095.310027223212, "cost": 33.31111111111111, "reason": "monthly rebalance"}
 {"type": "rebalance", "date": "2026-08-01", "weights": {"stocks": 0.3333, "bonds": 0.3333, "gold": 0.0}}
 {"type": "mark", "date": "2026-08-01", "equity": 99933.37777777776, "cash": 33311.155555555546, "prices": {"stocks": 1182931.6786796642, "bonds": 1095.310027223212, "gold": 233.01637612255678}}
+{"type": "fill", "date": "2026-09-01", "asset": "bonds", "shares": -0.11634463213438488, "price": 1099.0432088993311, "cost": 0.1278677778391866, "reason": "monthly rebalance"}
+{"type": "fill", "date": "2026-09-01", "asset": "stocks", "shares": 0.00012058525869283962, "price": 1177380.956233102, "cost": 0.14197478718739148, "reason": "monthly rebalance"}
+{"type": "rebalance", "date": "2026-09-01", "weights": {"stocks": 0.3333, "bonds": 0.3333, "gold": 0.0}}
+{"type": "mark", "date": "2026-09-01", "equity": 99890.3361109269, "cash": 33296.77870364232, "prices": {"stocks": 1177380.956233102, "bonds": 1099.0432088993311, "gold": 228.15636555731643}}
