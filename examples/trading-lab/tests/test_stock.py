@@ -41,3 +41,13 @@ def test_single_stock_paper_account(tmp_path):
     assert rep["benchmark_name"] == "MSFT buy & hold"
     assert rep["cash_weight"] >= -1e-9
     assert set(rep["holdings"]) <= {"MSFT"}
+
+
+def test_unfinished_session_is_dropped_until_after_the_close():
+    df = data.parse_stooq(STOOQ_CSV)  # last bar 2026-09-30
+    morning = pd.Timestamp("2026-09-30 09:53", tz="America/New_York")
+    evening = pd.Timestamp("2026-09-30 17:00", tz="America/New_York")
+    assert str(data.drop_unfinished_session(df, morning).index[-1].date()) == "2026-09-29"
+    assert str(data.drop_unfinished_session(df, evening).index[-1].date()) == "2026-09-30"
+    next_day = pd.Timestamp("2026-10-01 09:53", tz="America/New_York")
+    assert len(data.drop_unfinished_session(df, next_day)) == 3

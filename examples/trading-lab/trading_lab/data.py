@@ -134,13 +134,21 @@ def load_stooq(ticker: str) -> pd.DataFrame:
     return parse_stooq(resp.text)
 
 
+def drop_unfinished_session(df: pd.DataFrame, now: pd.Timestamp | None = None) -> pd.DataFrame:
+    """Drop today's bar while the US market is still open: its 'close' is just the latest price."""
+    now = now or pd.Timestamp.now(tz="America/New_York")
+    if len(df) and df.index[-1].date() == now.date() and (now.hour, now.minute) < (16, 15):
+        return df.iloc[:-1]
+    return df
+
+
 def load_stock(ticker: str) -> pd.DataFrame:
-    """Daily bars for one US stock: stooq first, Yahoo (yfinance) as fallback."""
+    """Completed daily bars for one US stock: stooq first, Yahoo (yfinance) as fallback."""
     try:
-        return load_stooq(ticker)
+        return drop_unfinished_session(load_stooq(ticker))
     except Exception as stooq_err:
         try:
-            return load_yahoo(ticker)
+            return drop_unfinished_session(load_yahoo(ticker))
         except Exception as yahoo_err:
             raise RuntimeError(f"no price source reachable for {ticker}: "
                                f"stooq: {stooq_err}; yahoo: {yahoo_err}") from yahoo_err
