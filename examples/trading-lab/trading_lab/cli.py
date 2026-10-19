@@ -59,11 +59,12 @@ def main(argv: list[str] | None = None) -> int:
     db = sub.add_parser("dashboard")
     db.add_argument("--journal", type=Path, required=True)
     db.add_argument("--out", type=Path, default=Path("dashboard/data.json"))
+    db.add_argument("--msft-journal", type=Path, default=None)
     args = ap.parse_args(argv)
 
     if args.cmd == "dashboard":
         from .dashboard import write
-        write(args.journal, args.out)
+        write(args.journal, args.out, args.msft_journal)
         print(f"wrote {args.out}")
         return 0
     if args.cmd == "portfolio":

@@ -84,23 +84,26 @@ Sharpe is consistent across periods but not yet statistically proven against 60/
 
 ## Autopilot (hands-off paper trading)
 
-`paper/history.jsonl` is the live paper account: $100k opened 2026-10-01 running
-"equal weight + trend" on stocks / 10y Treasuries / gold. A scheduled Claude routine
-runs weekly: refreshes the monthly data, runs one idempotent step, commits the
-journal, and reports. Nothing to do on your side.
+Live paper accounts, run weekly by a scheduled Claude routine (nothing to do on your side):
+
+| Journal | Account | Data | Safety stop |
+|---|---|---|---|
+| `paper/etf.jsonl` | $100k, "equal weight + trend" on SPY / IEF / GLD (opened 2026-10-16) | daily closes | -15% |
+| `paper/msft.jsonl` | $10k, trend rule on Microsoft (opened 2026-10-16) | daily closes | -25% |
+| `paper/history.jsonl` | retired 2026-10-19: the same rule on monthly-average index data | monthly | -15% |
 
 ```bash
-python -m trading_lab autopilot --universe history --journal paper/history.jsonl
-python -m trading_lab status --journal paper/history.jsonl
-python -m trading_lab autopilot ... --resume "reviewed: <why it is safe to restart>"
+python -m trading_lab autopilot --universe stock:SPY,IEF,GLD --journal paper/etf.jsonl
+python -m trading_lab autopilot --universe stock:MSFT --journal paper/msft.jsonl --cash 10000 --max-dd 0.25
+python -m trading_lab dashboard --journal paper/etf.jsonl --msft-journal paper/msft.jsonl
 ```
 
-- Rebalances once per month; never borrows (cash stays >= 0 after costs).
-- Circuit breaker: if equity drops 15% below its peak (the backtest's worst since 1972
-  was -11%), it sells everything and HALTs until a deliberate `--resume`.
-- Paper fills use monthly-average prices, so this tracks the *rule*, not exact ETF
-  fills. For daily ETF execution: `--universe yahoo:SPY,IEF,GLD` on a machine with
-  internet access (needs `yfinance`).
+- Rebalances once per month; never borrows (cash stays >= 0 after costs). Cash earns 0% in the paper
+  account; in a real account it would sit in T-bills.
+- Circuit breaker: sells everything and HALTs at the stop until a deliberate `--resume "<reason>"`.
+- On real daily ETF prices (2008-2026) the rule earned 5.4-5.7%/yr with a -10 to -12% worst drawdown
+  and a -7 to -8% worst year: the most consistent option tested, but its Sharpe ratio does not beat
+  60/40 or plain equal weight. The monthly-average index test (Sharpe 1.27) overstated it.
 - Paper only. Connecting real money is the owner's decision, after paper results earn it.
 
 ## Single-stock sleeve (MSFT)
@@ -116,7 +119,9 @@ python -m trading_lab evaluate --source stock:MSFT
 python -m trading_lab autopilot --universe stock:MSFT --journal paper/msft.jsonl --cash 10000 --max-dd 0.25
 ```
 
-Needs network access to `stooq.com` (or Yahoo: `query1/query2.finance.yahoo.com`, `fc.yahoo.com`).
+Needs network access to `stooq.com` or Yahoo (`query1/query2.finance.yahoo.com`, `fc.yahoo.com`).
+On Microsoft since 2008 the trend rule cut the worst year from -44% to -25% and the worst drawdown
+from -56% to -41%, but earned 11.3%/yr against 17.6% for simply holding (Sharpe 0.62 vs 0.71).
 
 ## Known limits
 

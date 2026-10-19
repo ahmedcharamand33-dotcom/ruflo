@@ -1,0 +1,4 @@
+{"type": "open", "cash": 10000.0, "rule": "equal weight + trend"}
+{"type": "fill", "date": "2026-10-16", "asset": "MSFT", "shares": 18.88290375296134, "price": 529.0499877929688, "cost": 9.99, "reason": "monthly rebalance"}
+{"type": "rebalance", "date": "2026-10-16", "weights": {"MSFT": 1.0}}
+{"type": "mark", "date": "2026-10-16", "equity": 9990.01, "cash": 0.010000000000218279, "prices": {"MSFT": 529.0499877929688}}
