@@ -21,6 +21,12 @@ from .data import bars_per_year
 from .paper import append_event, read_events
 from .portfolio import candidates
 
+
+def all_rules() -> dict:
+    """Portfolio rules plus single-asset live rules (e.g. SPY volatility control)."""
+    from .spy_research import LIVE_RULES
+    return {**candidates(), **LIVE_RULES}
+
 DEFAULT_RULE = "equal weight + trend"
 MIN_TRADE = 1.0  # dollars
 
@@ -85,7 +91,10 @@ def _trade_to(book: Book, journal: Path, date: str, prices: pd.Series, weights: 
 
 
 def step(closes: pd.DataFrame, journal: Path, rule: str = DEFAULT_RULE, cash: float = 100_000.0,
-         cost_bps: float = 5.0, slippage_bps: float = 5.0, max_dd: float = 0.15) -> str:
+         cost_bps: float = 5.0, slippage_bps: float = 5.0, max_dd: float = 0.15,
+         band: float | None = None) -> str:
+    """One unattended step. Rebalances on the first run of each month, or, with ``band``,
+    on any run where a holding has drifted more than ``band`` from its target weight."""
     events = read_events(journal)
     if not events:
         append_event(journal, {"type": "open", "cash": cash, "rule": rule})
@@ -107,9 +116,9 @@ def step(closes: pd.DataFrame, journal: Path, rule: str = DEFAULT_RULE, cash: fl
         reason = f"drawdown {equity / peak - 1:.1%} breached -{max_dd:.0%} limit"
         msg += ["CIRCUIT BREAKER: " + reason] + _trade_to(book, journal, date, prices, pd.Series(dtype=float), rate, "halt")
         append_event(journal, {"type": "halt", "date": date, "reason": reason})
-    elif book.rebalanced != date[:7]:
-        weights = candidates()[rule](closes, bars_per_year(closes.index)).iloc[-1]
-        notes = _trade_to(book, journal, date, prices, weights, rate, "monthly rebalance")
+    elif book.rebalanced != date[:7] or (band is not None and _drift(book, prices, closes, rule) > band):
+        weights = all_rules()[rule](closes, bars_per_year(closes.index)).iloc[-1]
+        notes = _trade_to(book, journal, date, prices, weights, rate, "rebalance")
         append_event(journal, {"type": "rebalance", "date": date,
                                "weights": {a: round(float(w), 4) for a, w in weights.items()}})
         msg.append("rebalanced to " + ", ".join(f"{a} {w:.0%}" for a, w in weights.items()) +
@@ -119,6 +128,16 @@ def step(closes: pd.DataFrame, journal: Path, rule: str = DEFAULT_RULE, cash: fl
     append_event(journal, {"type": "mark", "date": date, "equity": equity, "cash": book.cash,
                            "prices": {a: float(p) for a, p in prices.items()}})
     return " | ".join(msg)
+
+
+def _drift(book: Book, prices: pd.Series, closes: pd.DataFrame, rule: str) -> float:
+    """Largest gap between a holding's current weight and the rule's target today."""
+    equity = book.equity(prices)
+    if equity <= 0:
+        return 0.0
+    target = all_rules()[rule](closes, bars_per_year(closes.index)).iloc[-1]
+    return max(abs(float(target.get(a, 0.0)) - book.shares.get(a, 0.0) * float(prices[a]) / equity)
+               for a in prices.index)
 
 
 def resume(journal: Path, note: str) -> None:

@@ -7,6 +7,8 @@
     autopilot    daily unattended paper-trading step for a portfolio rule
     status       paper-trading results so far (markdown)
     dashboard    export the dashboard page's data (JSON)
+    spy-research pre-registered SPY hypotheses, honest out-of-sample scorecard
+    spy-log      append today's SPY state to the daily observation log
 """
 from __future__ import annotations
 
@@ -50,7 +52,10 @@ def main(argv: list[str] | None = None) -> int:
     au = sub.add_parser("autopilot")
     au.add_argument("--universe", default="yahoo:SPY,IEF,GLD")
     au.add_argument("--journal", type=Path, required=True)
-    au.add_argument("--rule", default=pp.DEFAULT_RULE, choices=list(pf.candidates()))
+    au.add_argument("--rule", default=pp.DEFAULT_RULE, choices=list(pp.all_rules()))
+    au.add_argument("--band", type=float, default=None, help="also rebalance when a weight drifts this far")
+    au.add_argument("--cost-bps", type=float, default=5.0)
+    au.add_argument("--slippage-bps", type=float, default=5.0)
     au.add_argument("--max-dd", type=float, default=0.15, help="circuit breaker, fraction below peak")
     au.add_argument("--cash", type=float, default=100_000.0, help="starting cash for a new account")
     au.add_argument("--resume", metavar="NOTE", help="clear a HALT (after a human/Claude review)")
@@ -59,12 +64,24 @@ def main(argv: list[str] | None = None) -> int:
     db = sub.add_parser("dashboard")
     db.add_argument("--journal", type=Path, required=True)
     db.add_argument("--out", type=Path, default=Path("dashboard/data.json"))
-    db.add_argument("--msft-journal", type=Path, default=None)
+    sr = sub.add_parser("spy-research")
+    sr.add_argument("--refresh", action="store_true")
+    sl = sub.add_parser("spy-log")
+    sl.add_argument("--out", type=Path, default=Path("paper/spy_observations.csv"))
     args = ap.parse_args(argv)
+
+    if args.cmd in ("spy-research", "spy-log"):
+        from . import spy_research as sres
+        if args.cmd == "spy-log":
+            print(sres.append_observation(args.out))
+        else:
+            df = sres.load_spy(refresh=args.refresh)
+            print(sres.render(sres.evaluate(df), sres.facts(df)))
+        return 0
 
     if args.cmd == "dashboard":
         from .dashboard import write
-        write(args.journal, args.out, args.msft_journal)
+        write(args.journal, args.out)
         print(f"wrote {args.out}")
         return 0
     if args.cmd == "portfolio":
@@ -72,7 +89,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "autopilot":
         if args.resume:
             pp.resume(args.journal, args.resume)
-        print(pp.step(load_universe(args.universe), args.journal, args.rule, cash=args.cash, max_dd=args.max_dd))
+        print(pp.step(load_universe(args.universe), args.journal, args.rule, cash=args.cash, max_dd=args.max_dd,
+                      cost_bps=args.cost_bps, slippage_bps=args.slippage_bps, band=args.band))
         return 0
     if args.cmd == "status":
         print(_status_markdown(pp.report(args.journal)))

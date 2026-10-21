@@ -98,14 +98,7 @@ footer { font-size: 12px; color: var(--muted); }
     <div class="legend" id="legend"></div>
   </section>
 
-  <section id="msftSection" hidden>
-    <h2>Microsoft account ($10,000)</h2>
-    <div class="strip">
-      <div class="cell"><span class="label">Account value</span><span class="value" id="mEquity">–</span><span class="label" id="mHold">–</span></div>
-      <div class="cell"><span class="label">Return since start</span><span class="value" id="mRet">–</span><span class="label" id="mBench">–</span></div>
-      <div class="cell"><span class="label">Drop from peak</span><span class="value" id="mDd">–</span><span class="label">safety stop −25%</span></div>
-    </div>
-  </section>
+  <div id="extras" style="display:grid;gap:28px"></div>
 
   <section>
     <h2>Paper account over time</h2>
@@ -218,37 +211,37 @@ function render(d) {
       <td class="num">${s.underwater_yrs.toFixed(1)} yrs</td></tr>`).join("");
 
   const label = e => e.type === "rebalance"
-    ? "Monthly rebalance: " + Object.entries(e.weights).map(([a, w]) => `${a} ${pctPlain(w)}`).join(", ")
+    ? "Rebalance: " + Object.entries(e.weights).map(([a, w]) => `${a} ${pctPlain(w)}`).join(", ")
     : e.type === "fill" ? `${e.shares > 0 ? "Bought" : "Sold"} ${e.asset} · ${money(Math.abs(e.shares * e.price))} (cost ${money(e.cost)})`
     : e.type === "halt" ? "Safety stop: " + e.reason : "Restarted: " + (e.note || "");
   $("log").innerHTML = [...d.activity].reverse().map(e =>
     `<li><span>${e.date ? fmtDate(e.date) : ""}</span><span>${label(e)}</span></li>`).join("")
     || `<li><span></span><span class="muted">No activity yet.</span></li>`;
-  if (d.msft && d.msft.equity !== undefined) {
-    const m = d.msft;
-    $("msftSection").hidden = false;
-    $("mEquity").textContent = money(m.equity);
-    $("mHold").textContent = m.holdings.MSFT ? `holding Microsoft ${pctPlain(m.holdings.MSFT)}` : "in cash (below trend)";
-    $("mRet").textContent = pct(m.return, 2);
-    $("mRet").className = "value " + (m.return >= 0 ? "pos" : "neg");
-    $("mBench").textContent = `Just holding Microsoft: ${pct(m.benchmark, 2)}`;
-    $("mDd").textContent = pctPlain(m.max_drawdown, 2);
-  }
+  $("extras").innerHTML = (d.extra || []).filter(a => a.rep && a.rep.equity !== undefined).map(a => {
+    const m = a.rep, held = Object.values(m.holdings).reduce((x, y) => x + y, 0);
+    return `<section><h2>${a.title}</h2><div class="strip">
+      <div class="cell"><span class="label">Account value</span><span class="value">${money(m.equity)}</span>
+        <span class="label">${held > 0.001 ? `${pctPlain(held)} invested, ${pctPlain(m.cash_weight)} cash` : "all in cash"}</span></div>
+      <div class="cell"><span class="label">Return since start</span><span class="value ${m.return >= 0 ? "pos" : "neg"}">${pct(m.return, 2)}</span>
+        <span class="label">${a.bench}: ${pct(m.benchmark, 2)}</span></div>
+      <div class="cell"><span class="label">Drop from peak</span><span class="value">${pctPlain(m.max_drawdown, 2)}</span>
+        <span class="label">safety stop ${a.stop}</span></div></div></section>`;
+  }).join("");
   $("foot").textContent = `Refreshed weekly by Claude · last refresh ${d.generated}. Daily closing prices; real fills would differ slightly.`;
 }
 
 fetch("data.json").then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
   .then(render)
   .catch(() => { $("status").textContent = "Data unavailable"; $("status").className = "pill halt";
-    if (d.msft && d.msft.equity !== undefined) {
-    const m = d.msft;
-    $("msftSection").hidden = false;
-    $("mEquity").textContent = money(m.equity);
-    $("mHold").textContent = m.holdings.MSFT ? `holding Microsoft ${pctPlain(m.holdings.MSFT)}` : "in cash (below trend)";
-    $("mRet").textContent = pct(m.return, 2);
-    $("mRet").className = "value " + (m.return >= 0 ? "pos" : "neg");
-    $("mBench").textContent = `Just holding Microsoft: ${pct(m.benchmark, 2)}`;
-    $("mDd").textContent = pctPlain(m.max_drawdown, 2);
-  }
+    $("extras").innerHTML = (d.extra || []).filter(a => a.rep && a.rep.equity !== undefined).map(a => {
+    const m = a.rep, held = Object.values(m.holdings).reduce((x, y) => x + y, 0);
+    return `<section><h2>${a.title}</h2><div class="strip">
+      <div class="cell"><span class="label">Account value</span><span class="value">${money(m.equity)}</span>
+        <span class="label">${held > 0.001 ? `${pctPlain(held)} invested, ${pctPlain(m.cash_weight)} cash` : "all in cash"}</span></div>
+      <div class="cell"><span class="label">Return since start</span><span class="value ${m.return >= 0 ? "pos" : "neg"}">${pct(m.return, 2)}</span>
+        <span class="label">${a.bench}: ${pct(m.benchmark, 2)}</span></div>
+      <div class="cell"><span class="label">Drop from peak</span><span class="value">${pctPlain(m.max_drawdown, 2)}</span>
+        <span class="label">safety stop ${a.stop}</span></div></div></section>`;
+  }).join("");
   $("foot").textContent = "The data file could not be loaded. Claude refreshes it weekly; check back after the next update."; });
 </script>

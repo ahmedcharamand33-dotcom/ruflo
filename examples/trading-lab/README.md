@@ -95,7 +95,7 @@ Live paper accounts, run weekly by a scheduled Claude routine (nothing to do on 
 ```bash
 python -m trading_lab autopilot --universe stock:SPY,IEF,GLD --journal paper/etf.jsonl
 python -m trading_lab autopilot --universe stock:MSFT --journal paper/msft.jsonl --cash 10000 --max-dd 0.25
-python -m trading_lab dashboard --journal paper/etf.jsonl --msft-journal paper/msft.jsonl
+python -m trading_lab dashboard --journal paper/etf.jsonl
 ```
 
 - Rebalances once per month; never borrows (cash stays >= 0 after costs). Cash earns 0% in the paper
@@ -105,6 +105,35 @@ python -m trading_lab dashboard --journal paper/etf.jsonl --msft-journal paper/m
   and a -7 to -8% worst year: the most consistent option tested, but its Sharpe ratio does not beat
   60/40 or plain equal weight. The monthly-average index test (Sharpe 1.27) overstated it.
 - Paper only. Connecting real money is the owner's decision, after paper results earn it.
+
+## SPY research and SPY account
+
+`spy_research.py` tests five hypotheses about SPY, fixed before looking at results and all
+reported (1994-2012 discovery, 2013-today out-of-sample, 2 bp per trade side, deflated for 5 trials):
+
+| 2013-today | CAGR | Sharpe | Worst drop | P(beats holding SPY) |
+|---|---|---|---|---|
+| Buy & hold SPY | 15.0% | 0.92 | -34% | |
+| Trend (above 200-day average) | 11.7% | 1.01 | -20% | 20% |
+| Buy the dip (RSI(2) < 10 in uptrend) | 4.4% | 0.75 | -11% | 4% |
+| Turn of the month | 2.2% | 0.34 | -10% | 0% |
+| Volatility control (15%) | 13.0% | 1.03 | -19% | 22% |
+| Overnight only | -1.0% | -0.04 | -38% | 0% |
+
+Facts: nearly all of SPY's growth since 1993 came overnight (+2,433%) rather than during the day
+(+26%), but trading it costs more than it earns. The dip rule was strong before 2013 (Sharpe 0.85,
+published 2008) and faded after. Nothing beats holding SPY with confidence; trend and volatility
+control keep most of the return with roughly half the worst drop.
+
+`paper/spy.jsonl` runs volatility control live ($100k, rebalance when the weight drifts 10 points,
+-25% safety stop). `paper/spy_observations.csv` logs SPY's state every trading day.
+
+```bash
+python -m trading_lab spy-research --refresh
+python -m trading_lab autopilot --universe stock:SPY --journal paper/spy.jsonl --rule "spy volatility control" \
+    --band 0.10 --cash 100000 --max-dd 0.25 --cost-bps 1 --slippage-bps 1
+python -m trading_lab spy-log
+```
 
 ## Single-stock sleeve (MSFT)
 

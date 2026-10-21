@@ -1,6 +1,6 @@
 """Export everything the dashboard page shows as one JSON file.
 
-    python -m trading_lab dashboard --journal paper/etf.jsonl --msft-journal paper/msft.jsonl
+    python -m trading_lab dashboard --journal paper/etf.jsonl   (side accounts: EXTRA_ACCOUNTS)
 """
 from __future__ import annotations
 
@@ -39,7 +39,7 @@ def _rounded(rep: dict) -> dict:
 
 
 def build(journal: Path, universe: str = "stock:SPY,IEF,GLD", since: str = "2008-01-01",
-          lag: int = 1, msft_journal: Path | None = None) -> dict:
+          lag: int = 1, extra: list[dict] | None = None) -> dict:
     events = read_events(journal)
     rep = _rounded(report(journal))
     if "holdings" in rep:
@@ -53,11 +53,20 @@ def build(journal: Path, universe: str = "stock:SPY,IEF,GLD", since: str = "2008
         "activity": [e for e in events if e["type"] in ("rebalance", "fill", "halt", "resume")][-40:],
         "backtest": _backtest(universe, since, lag),
     }
-    if msft_journal is not None and msft_journal.exists():
-        out["msft"] = _rounded(report(msft_journal))
+    out["extra"] = [{**{k: v for k, v in a.items() if k != "journal"}, "rep": _rounded(report(a["journal"]))}
+                    for a in (extra or []) if a["journal"].exists()]
     return out
 
 
-def write(journal: Path, out: Path, msft_journal: Path | None = None) -> None:
+# Side accounts shown under the main one: title, benchmark label, safety stop.
+EXTRA_ACCOUNTS = [
+    {"journal": Path("paper/spy.jsonl"), "title": "SPY account ($100,000, volatility control)",
+     "bench": "Just holding SPY", "stop": "−25%"},
+    {"journal": Path("paper/msft.jsonl"), "title": "Microsoft account ($10,000)",
+     "bench": "Just holding Microsoft", "stop": "−25%"},
+]
+
+
+def write(journal: Path, out: Path) -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(build(journal, msft_journal=msft_journal), indent=1))
+    out.write_text(json.dumps(build(journal, extra=EXTRA_ACCOUNTS), indent=1))
