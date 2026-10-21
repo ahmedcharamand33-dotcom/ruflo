@@ -634,6 +634,74 @@
    "detail": "none"
   }
  ],
+ "personal": [
+  {
+   "gate": "You have written down what you will do if the account falls 20% (the answer should be: nothing).",
+   "answer": {
+    "date": "2026-10-21",
+    "answer": "At -20% I do nothing and let the rule work"
+   }
+  },
+  {
+   "gate": "The money is not needed for at least 5 years.",
+   "answer": {
+    "date": "2026-10-21",
+    "answer": "Yes, it can sit for 5 years (starting size $2,000 max: $500 would ruin my week; emergency fund in place, no debt)"
+   }
+  },
+  {
+   "gate": "You start with at most a quarter of the amount you eventually intend, for the first 3 months.",
+   "answer": {
+    "date": "2026-10-21",
+    "answer": "Eventual goal $10,000; start with $2,000 (under a quarter) and add in steps only after each step is proven"
+   }
+  },
+  {
+   "gate": "You have a low-cost broker account that allows fractional shares or the rule's share counts.",
+   "answer": null
+  },
+  {
+   "gate": "You know short-term gains are taxed as income, and have asked how that applies to you.",
+   "answer": null
+  }
+ ],
+ "race": {
+  "backtest": [
+   {
+    "rule": "noise-area breakout",
+    "cagr": 0.025,
+    "p_real": 0.26
+   },
+   {
+    "rule": "intraday momentum (last 30 min)",
+    "cagr": -0.001,
+    "p_real": 0.06
+   },
+   {
+    "rule": "gap fade (0.25-1% gaps)",
+    "cagr": -0.016,
+    "p_real": 0.02
+   },
+   {
+    "rule": "opening-range breakout (5 min)",
+    "cagr": -0.026,
+    "p_real": 0.01
+   },
+   {
+    "rule": "VWAP trend",
+    "cagr": -0.172,
+    "p_real": 0.0
+   }
+  ],
+  "hold_day": 0.057,
+  "days": 0,
+  "runners": []
+ },
+ "price_check": {
+  "days": 14,
+  "mismatches": 0,
+  "last": "2026-10-20"
+ },
  "extra": [
   {
    "title": "Three-asset portfolio ($100,000: SPY, bonds, gold)",

@@ -14,11 +14,24 @@ from .backtest import run_backtest
 from .metrics import consistency, summary
 from .paper import read_events
 from .paper_portfolio import report
-from .readiness import check
+from .readiness import PERSONAL_GATES, answers, check
 from .spy_research import COST_BPS, SLIPPAGE_BPS, SPLIT, facts, load_spy, vol_target
 
 SPY_JOURNAL = Path("paper/spy.jsonl")
 OBSERVATIONS = Path("paper/spy_observations.csv")
+PRICE_CHECK = Path("paper/price_check.csv")
+RACE_LOG = Path("paper/intraday_forward.csv")
+
+# Day-trading backtest, 2023-today at near-minimum costs (0.25 bp per side), from
+# `python -m trading_lab intraday`; refreshed by hand when the monthly run changes it.
+RACE_BACKTEST = [
+    {"rule": "noise-area breakout", "cagr": 0.025, "p_real": 0.26},
+    {"rule": "intraday momentum (last 30 min)", "cagr": -0.001, "p_real": 0.06},
+    {"rule": "gap fade (0.25-1% gaps)", "cagr": -0.016, "p_real": 0.02},
+    {"rule": "opening-range breakout (5 min)", "cagr": -0.026, "p_real": 0.01},
+    {"rule": "VWAP trend", "cagr": -0.172, "p_real": 0.0},
+]
+RACE_HOLD_DAY = 0.057  # simply holding SPY from open to close, same period and costs
 
 # Side accounts shown under the SPY account: title, benchmark label, safety stop.
 EXTRA_ACCOUNTS = [
@@ -55,6 +68,28 @@ def _today() -> dict | None:
     return {k: (None if pd.isna(v) else (v.item() if hasattr(v, "item") else v)) for k, v in row.items()}
 
 
+def _race() -> dict:
+    out = {"backtest": RACE_BACKTEST, "hold_day": RACE_HOLD_DAY, "days": 0, "runners": []}
+    if not RACE_LOG.exists():
+        return out
+    log = pd.read_csv(RACE_LOG, index_col="date")
+    cols = [c for c in log.columns if c.endswith("[spread_only]") and not c.startswith("hold during")]
+    out["days"] = len(log)
+    out["runners"] = sorted(({"rule": c.replace(" [spread_only]", ""),
+                              "total": round(float((1.0 + log[c]).prod() - 1.0), 5)} for c in cols),
+                            key=lambda r: -r["total"])
+    hold = "hold during the day [spread_only]"
+    out["hold_total"] = round(float((1.0 + log[hold]).prod() - 1.0), 5) if hold in log else None
+    return out
+
+
+def _price_check() -> dict | None:
+    if not PRICE_CHECK.exists():
+        return None
+    t = pd.read_csv(PRICE_CHECK)
+    return {"days": len(t), "mismatches": int((~t.ok.astype(bool)).sum()), "last": str(t.date.iloc[-1])}
+
+
 def build(journal: Path = SPY_JOURNAL, extra: list[dict] | None = None) -> dict:
     spy = load_spy()
     events = read_events(journal)
@@ -68,6 +103,9 @@ def build(journal: Path = SPY_JOURNAL, extra: list[dict] | None = None) -> dict:
         "facts": facts(spy),
         "today": _today(),
         "readiness": [{"name": n, "ok": bool(ok), "detail": d} for n, ok, d in check(journal, spy)],
+        "personal": [{"gate": g, "answer": answers().get(i)} for i, g in enumerate(PERSONAL_GATES)],
+        "race": _race(),
+        "price_check": _price_check(),
         "extra": [{**{k: v for k, v in a.items() if k != "journal"}, "rep": _rounded(report(a["journal"]))}
                   for a in (EXTRA_ACCOUNTS if extra is None else extra) if a["journal"].exists()],
     }
