@@ -8,6 +8,7 @@ owner; no code can check them.
 """
 from __future__ import annotations
 
+import json
 import math
 from pathlib import Path
 
@@ -28,6 +29,13 @@ PERSONAL_GATES = [
     "You have a low-cost broker account that allows fractional shares or the rule's share counts.",
     "You know short-term gains are taxed as income, and have asked how that applies to you.",
 ]
+
+
+ANSWERS = Path("paper/personal_gates.json")  # the owner's own words, keyed by gate number
+
+
+def answers(path: Path = ANSWERS) -> dict[int, dict]:
+    return {int(k): v for k, v in json.loads(path.read_text()).items()} if path.exists() else {}
 
 
 def _marks(journal: Path) -> pd.Series:
@@ -63,11 +71,14 @@ def check(journal: Path = Path("paper/spy.jsonl"), spy: pd.DataFrame | None = No
     ]
 
 
-def render(gates: list[tuple[str, bool, str]]) -> str:
+def render(gates: list[tuple[str, bool, str]], answered: dict[int, dict] | None = None) -> str:
+    answered = answers() if answered is None else answered
     out = ["== Real-money readiness (SPY) =="]
     out += [f"  [{'PASS' if ok else 'NOT YET'}] {name}: {detail}" for name, ok, detail in gates]
     out.append("Personal gates (only you can check these):")
-    out += [f"  [ ] {g}" for g in PERSONAL_GATES]
+    for i, g in enumerate(PERSONAL_GATES):
+        a = answered.get(i)
+        out.append(f"  [x] {g}\n      {a['date']}: \"{a['answer']}\"" if a else f"  [ ] {g}")
     verdict = "READY to start small" if all(ok for _, ok, _ in gates) else "NOT READY: keep paper trading"
     out.append(f"VERDICT: {verdict}")
     return "\n".join(out)
