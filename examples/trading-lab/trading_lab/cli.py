@@ -9,6 +9,7 @@
     dashboard    export the dashboard page's data (JSON)
     spy-research pre-registered SPY hypotheses, honest out-of-sample scorecard
     spy-log      append today's SPY state (+ 5-minute bars) to the daily logs
+    price-check  compare Yahoo's SPY closes with Alpaca's; log any mismatch
     readiness    real-money go-live gates for the SPY account
 """
 from __future__ import annotations
@@ -68,6 +69,7 @@ def main(argv: list[str] | None = None) -> int:
     sr = sub.add_parser("spy-research")
     sr.add_argument("--refresh", action="store_true")
     sub.add_parser("readiness")
+    sub.add_parser("price-check")
     sl = sub.add_parser("spy-log")
     sl.add_argument("--out", type=Path, default=Path("paper/spy_observations.csv"))
     args = ap.parse_args(argv)
@@ -76,6 +78,11 @@ def main(argv: list[str] | None = None) -> int:
         from .readiness import check, render as render_ready
         print(render_ready(check()))
         return 0
+    if args.cmd == "price-check":
+        from .price_check import run as run_check
+        msg = run_check()
+        print(msg)
+        return 0 if "MISMATCH" not in msg else 1
     if args.cmd in ("spy-research", "spy-log"):
         from . import spy_research as sres
         if args.cmd == "spy-log":
