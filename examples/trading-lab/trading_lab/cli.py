@@ -10,6 +10,8 @@
     spy-research pre-registered SPY hypotheses, honest out-of-sample scorecard
     spy-log      append today's SPY state (+ 5-minute bars) to the daily logs
     price-check  compare Yahoo's SPY closes with Alpaca's; log any mismatch
+    intraday     test the published day-trading rules on SPY minute bars (2016-today)
+    intraday-log append today's result for every day-trading rule (forward test)
     readiness    real-money go-live gates for the SPY account
 """
 from __future__ import annotations
@@ -70,6 +72,9 @@ def main(argv: list[str] | None = None) -> int:
     sr.add_argument("--refresh", action="store_true")
     sub.add_parser("readiness")
     sub.add_parser("price-check")
+    sub.add_parser("intraday")
+    il = sub.add_parser("intraday-log")
+    il.add_argument("--out", type=Path, default=Path("paper/intraday_forward.csv"))
     sl = sub.add_parser("spy-log")
     sl.add_argument("--out", type=Path, default=Path("paper/spy_observations.csv"))
     args = ap.parse_args(argv)
@@ -77,6 +82,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "readiness":
         from .readiness import check, render as render_ready
         print(render_ready(check()))
+        return 0
+    if args.cmd in ("intraday", "intraday-log"):
+        from . import intraday, minute_data
+        bars = minute_data.load(refresh_current_year=args.cmd == "intraday-log")
+        print(intraday.forward_log(args.out, bars) if args.cmd == "intraday-log"
+              else intraday.render(intraday.evaluate(bars)))
         return 0
     if args.cmd == "price-check":
         from .price_check import run as run_check

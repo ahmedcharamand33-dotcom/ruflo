@@ -146,6 +146,32 @@ python -m trading_lab spy-log
 python -m trading_lab readiness
 ```
 
+## Day trading SPY (`intraday.py`, `minute_data.py`)
+
+Five published day-trading rules, frozen on 2026-10-21 before testing, run on 1.06 million SPY
+one-minute bars from Alpaca (2016-today). All are flat at the close, at most 1x long or short, filled
+at the next bar's open. Discovery 2016-2022; judged on 2023-today; charged for 10 trials in total.
+
+| 2023-today | CAGR at 2 bp/side | CAGR at 0.25 bp/side | P(real), 0.25 bp |
+|---|---|---|---|
+| Hold SPY during the day only | -3.2% | 5.7% | |
+| Intraday momentum (Gao et al. 2018) | -8.4% | -0.1% | 6% |
+| 5-minute opening-range breakout (Crabel; Zarattini & Aziz 2023) | -10.5% | -2.6% | 1% |
+| Gap fade, 0.25-1% gaps (Raschke & Connors 1995) | -5.6% | -1.6% | 2% |
+| VWAP trend (Zarattini & Aziz 2023) | -82.1% | -17.2% | 0% |
+| Noise-area breakout (Zarattini, Aziz & Barbon 2024) | -5.4% | 2.5% | 26% |
+
+Costs decide everything: at 1 bp per side every rule loses. Only the noise-area breakout makes money at
+near-zero costs, and even then less than simply holding SPY during the day, with no statistical proof.
+`python -m trading_lab intraday-log` adds each new session's result for every rule to
+`paper/intraday_forward.csv`, a forward test no backtest can fake. No new day-trading rules are added
+because of these results.
+
+```bash
+python -m trading_lab intraday        # full report (downloads minute bars to data/minute/ on first run)
+python -m trading_lab intraday-log    # forward test, once per evening
+```
+
 ## Single-stock sleeve (MSFT)
 
 A separate $10k paper account runs the same trend rule on one stock: hold MSFT while it is
