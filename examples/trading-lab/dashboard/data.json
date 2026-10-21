@@ -1,21 +1,21 @@
 {
- "generated": "2026-10-19",
+ "generated": "2026-10-21",
  "rule": "equal weight + trend",
  "max_dd_limit": 0.15,
  "paper": {
   "status": "running",
   "since": "2026-10-16",
-  "as_of": "2026-10-19",
-  "days": 2,
-  "equity": 100110.53,
-  "return": 0.001105,
-  "benchmark": 0.002236,
+  "as_of": "2026-10-20",
+  "days": 3,
+  "equity": 100219.9,
+  "return": 0.002199,
+  "benchmark": 0.003802,
   "benchmark_name": "60/40",
   "max_drawdown": -0.000333,
   "holdings": {
-   "stocks": 0.334
+   "stocks": 0.335
   },
-  "cash_weight": 0.666,
+  "cash_weight": 0.665,
   "fills": 1
  },
  "marks": [
@@ -26,6 +26,10 @@
   {
    "date": "2026-10-19",
    "equity": 100110.53
+  },
+  {
+   "date": "2026-10-20",
+   "equity": 100219.9
   }
  ],
  "activity": [
@@ -493,7 +497,7 @@
     6.0029,
     6.1261,
     6.3443,
-    6.4956,
+    6.4955,
     6.5082,
     6.5134,
     6.6094,
@@ -505,7 +509,7 @@
     7.1732,
     7.3655,
     7.3412,
-    7.3472
+    7.403
    ],
    "60/40": [
     0.9769,
@@ -733,7 +737,7 @@
     4.5056,
     4.5802,
     4.5095,
-    4.5406
+    4.5579
    ],
    "equal weight + trend": [
     1.0465,
@@ -807,7 +811,7 @@
     1.3101,
     1.3302,
     1.3433,
-    1.3549,
+    1.355,
     1.339,
     1.3541,
     1.3474,
@@ -950,7 +954,7 @@
     2.3828,
     2.5078,
     2.5667,
-    2.623,
+    2.6231,
     2.637,
     2.7575,
     2.8548,
@@ -961,18 +965,18 @@
     2.669,
     2.6809,
     2.6782,
-    2.679
+    2.6858
    ]
   },
   "stats": {
    "stocks only": {
     "years": 18.8,
-    "cagr": 0.1122,
-    "vol": 0.1971,
-    "sharpe": 0.6381,
-    "sortino": 0.7805,
+    "cagr": 0.1125,
+    "vol": 0.197,
+    "sharpe": 0.64,
+    "sortino": 0.7827,
     "max_dd": -0.5187,
-    "calmar": 0.2162,
+    "calmar": 0.217,
     "pos_years": 0.8421,
     "worst_year": -0.3679,
     "pos_12m": 0.8651,
@@ -980,12 +984,12 @@
    },
    "60/40": {
     "years": 18.8,
-    "cagr": 0.084,
+    "cagr": 0.0842,
     "vol": 0.1135,
-    "sharpe": 0.7674,
-    "sortino": 0.9664,
+    "sharpe": 0.769,
+    "sortino": 0.9683,
     "max_dd": -0.3079,
-    "calmar": 0.2728,
+    "calmar": 0.2734,
     "pos_years": 0.8421,
     "worst_year": -0.1673,
     "pos_12m": 0.8832,
@@ -993,15 +997,15 @@
    },
    "equal weight + trend": {
     "years": 18.8,
-    "cagr": 0.0539,
+    "cagr": 0.054,
     "vol": 0.0672,
-    "sharpe": 0.8154,
-    "sortino": 1.0264,
+    "sharpe": 0.8172,
+    "sortino": 1.0285,
     "max_dd": -0.1188,
-    "calmar": 0.4538,
+    "calmar": 0.4548,
     "pos_years": 0.8947,
     "worst_year": -0.0822,
-    "pos_12m": 0.7978,
+    "pos_12m": 0.7979,
     "underwater_yrs": 2.3532
    }
   }
@@ -1009,11 +1013,11 @@
  "msft": {
   "status": "running",
   "since": "2026-10-16",
-  "as_of": "2026-10-19",
-  "days": 2,
-  "equity": 10046.0,
-  "return": 0.0046,
-  "benchmark": 0.005604,
+  "as_of": "2026-10-20",
+  "days": 3,
+  "equity": 10043.26,
+  "return": 0.004326,
+  "benchmark": 0.00533,
   "benchmark_name": "MSFT buy & hold",
   "max_drawdown": -0.000999,
   "holdings": {
