@@ -1,4 +1,14 @@
 {
- "0": {"date": "2026-10-21", "answer": "At -20% I do nothing and let the rule work"},
- "1": {"date": "2026-10-21", "answer": "Yes, it can sit for 5 years (starting size $2,000 max: $500 would ruin my week; emergency fund in place, no debt)"}
+ "0": {
+  "date": "2026-10-21",
+  "answer": "At -20% I do nothing and let the rule work"
+ },
+ "1": {
+  "date": "2026-10-21",
+  "answer": "Yes, it can sit for 5 years (starting size $2,000 max: $500 would ruin my week; emergency fund in place, no debt)"
+ },
+ "2": {
+  "date": "2026-10-21",
+  "answer": "Eventual goal $10,000; start with $2,000 (under a quarter) and add in steps only after each step is proven"
+ }
 }
