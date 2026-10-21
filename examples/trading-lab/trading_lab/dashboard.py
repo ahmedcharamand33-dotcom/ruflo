@@ -1,6 +1,6 @@
-"""Export everything the dashboard page shows as one JSON file.
+"""Export everything the dashboard page shows as one JSON file (SPY account first).
 
-    python -m trading_lab dashboard --journal paper/etf.jsonl   (side accounts: EXTRA_ACCOUNTS)
+    python -m trading_lab dashboard
 """
 from __future__ import annotations
 
@@ -8,65 +8,71 @@ import json
 from datetime import date
 from pathlib import Path
 
-from . import portfolio as pf
-from .data import bars_per_year, load_universe
+import pandas as pd
+
+from .backtest import run_backtest
 from .metrics import consistency, summary
 from .paper import read_events
-from .paper_portfolio import DEFAULT_RULE, report
+from .paper_portfolio import report
+from .readiness import check
+from .spy_research import COST_BPS, SLIPPAGE_BPS, SPLIT, facts, load_spy, vol_target
 
-# The page colours holdings by asset class; map tickers onto those classes.
-ASSET_CLASS = {"SPY": "stocks", "IEF": "bonds", "GLD": "gold"}
+SPY_JOURNAL = Path("paper/spy.jsonl")
+OBSERVATIONS = Path("paper/spy_observations.csv")
 
-
-def _backtest(universe: str, since: str, lag: int) -> dict:
-    closes = load_universe(universe)
-    bpy = bars_per_year(closes.index)
-    runs = pf.run_all(closes, bpy, execution_lag=lag)
-    shown = {f"{closes.columns[0]} only": "stocks only", "60/40": "60/40", DEFAULT_RULE: DEFAULT_RULE}
-    curves, stats, dates = {}, {}, []
-    for name, key in shown.items():
-        r = runs[name].result.returns.loc[since:]
-        monthly = (1.0 + r).cumprod().resample("ME").last()  # keep the page small
-        curves[key] = [round(float(v), 4) for v in monthly.values]
-        dates = [d.strftime("%Y-%m") for d in monthly.index]
-        stats[key] = {**{k: round(float(v), 4) for k, v in summary(r, bpy).items()},
-                      **{k: round(float(v), 4) for k, v in consistency(r, bpy).items()}}
-    return {"since": dates[0], "dates": dates, "curves": curves, "stats": stats}
+# Side accounts shown under the SPY account: title, benchmark label, safety stop.
+EXTRA_ACCOUNTS = [
+    {"journal": Path("paper/etf.jsonl"), "title": "Three-asset portfolio ($100,000: SPY, bonds, gold)",
+     "bench": "60/40 stocks/bonds", "stop": "−15%"},
+]
 
 
 def _rounded(rep: dict) -> dict:
     return {k: (round(v, 6) if isinstance(v, float) else v) for k, v in rep.items()}
 
 
-def build(journal: Path, universe: str = "stock:SPY,IEF,GLD", since: str = "2008-01-01",
-          lag: int = 1, extra: list[dict] | None = None) -> dict:
+def _backtest(spy: pd.DataFrame, since: str = SPLIT) -> dict:
+    """The live rule against simply holding SPY, over the out-of-sample years."""
+    runs = {
+        "Just holding SPY": run_backtest(spy.close, pd.Series(1.0, index=spy.index), COST_BPS, SLIPPAGE_BPS),
+        "Volatility control (this account's rule)": run_backtest(spy.close, vol_target(spy), COST_BPS, SLIPPAGE_BPS),
+    }
+    curves, stats, dates = {}, {}, []
+    for name, res in runs.items():
+        r = res.returns.loc[since:]
+        monthly = (1.0 + r).cumprod().resample("ME").last()  # keep the page small
+        curves[name] = [round(float(v), 4) for v in monthly.values]
+        dates = [d.strftime("%Y-%m") for d in monthly.index]
+        stats[name] = {**{k: round(float(v), 4) for k, v in summary(r, 252).items()},
+                       **{k: round(float(v), 4) for k, v in consistency(r, 252).items()}}
+    return {"since": dates[0], "dates": dates, "curves": curves, "stats": stats, "ours": list(runs)[1]}
+
+
+def _today() -> dict | None:
+    if not OBSERVATIONS.exists():
+        return None
+    row = pd.read_csv(OBSERVATIONS).iloc[-1]
+    return {k: (None if pd.isna(v) else (v.item() if hasattr(v, "item") else v)) for k, v in row.items()}
+
+
+def build(journal: Path = SPY_JOURNAL, extra: list[dict] | None = None) -> dict:
+    spy = load_spy()
     events = read_events(journal)
-    rep = _rounded(report(journal))
-    if "holdings" in rep:
-        rep["holdings"] = {ASSET_CLASS.get(k, k): v for k, v in rep["holdings"].items()}
-    out = {
+    return {
         "generated": str(date.today()),
-        "rule": DEFAULT_RULE,
-        "max_dd_limit": 0.15,
-        "paper": rep,
+        "max_dd_limit": 0.25,
+        "paper": _rounded(report(journal)),
         "marks": [{"date": e["date"], "equity": round(e["equity"], 2)} for e in events if e["type"] == "mark"],
         "activity": [e for e in events if e["type"] in ("rebalance", "fill", "halt", "resume")][-40:],
-        "backtest": _backtest(universe, since, lag),
+        "backtest": _backtest(spy),
+        "facts": facts(spy),
+        "today": _today(),
+        "readiness": [{"name": n, "ok": bool(ok), "detail": d} for n, ok, d in check(journal, spy)],
+        "extra": [{**{k: v for k, v in a.items() if k != "journal"}, "rep": _rounded(report(a["journal"]))}
+                  for a in (EXTRA_ACCOUNTS if extra is None else extra) if a["journal"].exists()],
     }
-    out["extra"] = [{**{k: v for k, v in a.items() if k != "journal"}, "rep": _rounded(report(a["journal"]))}
-                    for a in (extra or []) if a["journal"].exists()]
-    return out
 
 
-# Side accounts shown under the main one: title, benchmark label, safety stop.
-EXTRA_ACCOUNTS = [
-    {"journal": Path("paper/spy.jsonl"), "title": "SPY account ($100,000, volatility control)",
-     "bench": "Just holding SPY", "stop": "−25%"},
-    {"journal": Path("paper/msft.jsonl"), "title": "Microsoft account ($10,000)",
-     "bench": "Just holding Microsoft", "stop": "−25%"},
-]
-
-
-def write(journal: Path, out: Path) -> None:
+def write(out: Path, journal: Path = SPY_JOURNAL) -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(build(journal, extra=EXTRA_ACCOUNTS), indent=1))
+    out.write_text(json.dumps(build(journal), indent=1))

@@ -1,2 +1,2 @@
-date,open,close,day_return,overnight_gap,vix,vol20,pct_above_200d,rsi2,vol_control_exposure,trend_200_signal,dip_signal
-2026-10-20,765.86,769.05,0.003353,-0.000809,17.31,0.0902,0.064,62.6,1.0,1,0
+date,open,close,day_return,overnight_gap,vix,vol20,pct_above_200d,rsi2,vol_control_exposure,trend_200_signal,dip_signal,vix3m,vix_term_ratio
+2026-10-20,765.86,769.05,0.003353,-0.000809,17.31,0.0902,0.064,62.6,1.0,1,0,18.99,0.912

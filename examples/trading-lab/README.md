@@ -89,13 +89,13 @@ Live paper accounts, run weekly by a scheduled Claude routine (nothing to do on 
 | Journal | Account | Data | Safety stop |
 |---|---|---|---|
 | `paper/etf.jsonl` | $100k, "equal weight + trend" on SPY / IEF / GLD (opened 2026-10-16) | daily closes | -15% |
-| `paper/msft.jsonl` | $10k, trend rule on Microsoft (opened 2026-10-16) | daily closes | -25% |
+| `paper/spy.jsonl` | **$100k, SPY volatility control (opened 2026-10-20) — the focus** | daily closes | -25% |
+| `paper/msft.jsonl` | retired 2026-10-21 (owner chose to focus on SPY): trend rule on Microsoft | daily closes | -25% |
 | `paper/history.jsonl` | retired 2026-10-19: the same rule on monthly-average index data | monthly | -15% |
 
 ```bash
 python -m trading_lab autopilot --universe stock:SPY,IEF,GLD --journal paper/etf.jsonl
-python -m trading_lab autopilot --universe stock:MSFT --journal paper/msft.jsonl --cash 10000 --max-dd 0.25
-python -m trading_lab dashboard --journal paper/etf.jsonl
+python -m trading_lab dashboard            # SPY account first; side accounts in dashboard.EXTRA_ACCOUNTS
 ```
 
 - Rebalances once per month; never borrows (cash stays >= 0 after costs). Cash earns 0% in the paper
@@ -126,13 +126,24 @@ published 2008) and faded after. Nothing beats holding SPY with confidence; tren
 control keep most of the return with roughly half the worst drop.
 
 `paper/spy.jsonl` runs volatility control live ($100k, rebalance when the weight drifts 10 points,
--25% safety stop). `paper/spy_observations.csv` logs SPY's state every trading day.
+-25% safety stop). `paper/spy_observations.csv` logs SPY's state every trading day (price, overnight
+gap, VIX and VIX3M, trend, 2-day RSI, every rule's signal) and `paper/spy_intraday/` keeps every
+5-minute bar (Yahoo only serves the last 60 days, so this history exists nowhere else).
+
+### Real-money gates (`python -m trading_lab readiness`)
+
+Measured from the journal, so they cannot be argued into a pass: at least 126 trading days of paper
+results; the bot ran on at least 95% of trading days; live returns not significantly below the tested
+rule (z above -2); no unexplained safety stop. Plus five personal gates only the owner can tick: a
+written plan for a 20% drop, money not needed for 5 years, starting with at most a quarter of the
+intended amount, a low-cost broker, and understanding how short-term gains are taxed.
 
 ```bash
 python -m trading_lab spy-research --refresh
 python -m trading_lab autopilot --universe stock:SPY --journal paper/spy.jsonl --rule "spy volatility control" \
     --band 0.10 --cash 100000 --max-dd 0.25 --cost-bps 1 --slippage-bps 1
 python -m trading_lab spy-log
+python -m trading_lab readiness
 ```
 
 ## Single-stock sleeve (MSFT)

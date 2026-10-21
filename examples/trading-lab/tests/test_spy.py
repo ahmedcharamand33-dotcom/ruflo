@@ -51,3 +51,21 @@ def test_band_rebalancing_trades_only_on_drift(df, tmp_path):
     assert 1 <= len(rebalances) < 100
     rep = report(j)
     assert rep["cash_weight"] >= -1e-9 and rep["days"] == 100
+
+
+def test_save_intraday_appends_without_duplicates(tmp_path, monkeypatch):
+    idx = pd.date_range("2026-10-19 09:30", periods=6, freq="5min", tz="America/New_York")
+    bars = pd.DataFrame({"Open": 1.0, "High": 1.0, "Low": 1.0, "Close": 1.0, "Volume": 10}, index=idx)
+    monkeypatch.setattr(sr, "_yahoo", lambda *a, **k: bars)
+    after_close = pd.Timestamp("2026-10-19 17:00", tz="America/New_York")
+    assert "6 new" in sr.save_intraday(tmp_path, after_close)
+    assert "0 new" in sr.save_intraday(tmp_path, after_close)
+    assert len(pd.read_csv(tmp_path / "2026-10.csv")) == 6
+
+
+def test_save_intraday_skips_unfinished_session(tmp_path, monkeypatch):
+    idx = pd.date_range("2026-10-19 09:30", periods=6, freq="5min", tz="America/New_York")
+    bars = pd.DataFrame({"Open": 1.0, "High": 1.0, "Low": 1.0, "Close": 1.0, "Volume": 10}, index=idx)
+    monkeypatch.setattr(sr, "_yahoo", lambda *a, **k: bars)
+    mid_session = pd.Timestamp("2026-10-19 10:30", tz="America/New_York")
+    assert "0 new" in sr.save_intraday(tmp_path, mid_session)

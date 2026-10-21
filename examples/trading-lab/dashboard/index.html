@@ -72,52 +72,77 @@ tr.ours td { font-weight: 600; }
 .rules div { display: grid; grid-template-columns: 150px 1fr; gap: 12px; }
 @media (max-width: 520px) { .rules div { grid-template-columns: 1fr; gap: 2px; } }
 footer { font-size: 12px; color: var(--muted); }
+.today { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px 18px; }
+.today div { display: grid; gap: 2px; }
+.today .label { font-size: 12px; color: var(--muted); }
+.today .value { font: 500 18px/1.3 var(--mono); font-variant-numeric: tabular-nums; }
+.gates { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 14px; }
+.gates li { display: grid; grid-template-columns: 76px 1fr; gap: 12px; align-items: baseline; }
+.tag { font: 600 11px/1.6 var(--sans); letter-spacing: .04em; text-align: center; border-radius: 4px; border: 1px solid currentColor; }
+.tag.ok { color: var(--good); } .tag.no { color: var(--warn); }
+.facts { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 14px; max-width: 70ch; }
 </style>
 
 <div class="wrap">
   <header>
-    <h1>Paper portfolio</h1>
+    <h1>SPY lab</h1>
     <div class="meta">
       <span id="status" class="pill ok">Loading</span>
       <span id="asof"></span>
-      <span id="rule"></span>
+      <span>Paper money only</span>
     </div>
   </header>
 
-  <div class="strip" id="strip">
-    <div class="cell"><span class="label">Account value</span><span class="value" id="equity">–</span><span class="label">started at $100,000</span></div>
+  <div class="strip">
+    <div class="cell"><span class="label">SPY account value</span><span class="value" id="equity">–</span><span class="label">started at $100,000</span></div>
     <div class="cell"><span class="label">Return since start</span><span class="value" id="ret">–</span><span class="label" id="bench">–</span></div>
     <div class="cell"><span class="label">Drop from peak</span><span class="value" id="dd">–</span>
       <div class="gauge" aria-hidden="true"><i id="ddbar" style="width:0"></i></div>
-      <div class="gauge-scale"><span>0%</span><span>safety stop −15%</span></div></div>
+      <div class="gauge-scale"><span>0%</span><span>safety stop −25%</span></div></div>
   </div>
 
   <section>
-    <h2>Holding now</h2>
+    <h2>In the market now</h2>
     <div class="alloc" id="alloc" role="img" aria-label="Current allocation"></div>
     <div class="legend" id="legend"></div>
   </section>
 
-  <div id="extras" style="display:grid;gap:28px"></div>
+  <section>
+    <h2>SPY today</h2>
+    <div class="panel"><div class="today" id="today"></div></div>
+  </section>
 
   <section>
-    <h2>Paper account over time</h2>
+    <h2>Ready for real money?</h2>
+    <div class="panel"><ul class="gates" id="gates"></ul>
+      <p class="muted" style="font-size:13px;margin-top:12px">Plus five personal checks only you can tick: a written plan for a 20% drop, money not needed for 5 years, starting with a quarter of the amount, a low-cost broker, and knowing how short-term gains are taxed.</p></div>
+  </section>
+
+  <section>
+    <h2>SPY account over time</h2>
     <div class="panel" id="paperPanel"></div>
   </section>
 
   <section>
-    <h2>What to expect: the same rule since 2008</h2>
+    <h2 id="btTitle">What to expect</h2>
     <div class="panel">
-      <p class="muted" style="font-size:13px;margin-bottom:10px">Growth of $1, log scale, on real daily ETF prices (SPY, IEF, GLD). Tested on history, not live trading.</p>
+      <p class="muted" style="font-size:13px;margin-bottom:10px">Growth of $1, log scale, daily SPY prices, costs included. Tested on years the rule was not built on.</p>
       <div id="btChart"></div>
       <div class="table-wrap" style="margin-top:14px">
         <table>
-          <thead><tr><th>Portfolio</th><th>Per year</th><th>Worst year</th><th>Worst drop</th><th>Up years</th><th>Longest below peak</th></tr></thead>
+          <thead><tr><th>Approach</th><th>Per year</th><th>Worst year</th><th>Worst drop</th><th>Up years</th><th>Longest below peak</th></tr></thead>
           <tbody id="btTable"></tbody>
         </table>
       </div>
     </div>
   </section>
+
+  <section>
+    <h2>What we have learned about SPY</h2>
+    <div class="panel"><ul class="facts" id="facts"></ul></div>
+  </section>
+
+  <div id="extras" style="display:grid;gap:28px"></div>
 
   <section>
     <h2>Activity</h2>
@@ -127,29 +152,28 @@ footer { font-size: 12px; color: var(--muted); }
   <section>
     <h2>How it is run</h2>
     <div class="panel rules">
-      <div><strong>Rule</strong><span>A third each in US stocks (SPY), 10-year Treasuries (IEF) and gold (GLD). Each is held only while it trades above its 10-month average; otherwise that third sits in cash. Rebalanced monthly. Never borrows.</span></div>
-      <div><strong>Safety stop</strong><span>If the account falls 15% below its peak, it sells everything and pauses until Claude reviews and restarts it with a written reason.</span></div>
-      <div><strong>Changes</strong><span>Claude changes the strategy only when a new version beats this one on long-run tests it was not tuned on. Never because of one bad month.</span></div>
-      <div><strong>Real money</strong><span>None. Around April 2027, after six months of paper results, Claude gives a clear recommendation.</span></div>
+      <div><strong>Rule</strong><span>Hold SPY, but less of it when SPY is swinging wildly: the account aims for swings of about 15% a year, so when SPY gets jumpy it moves part of the money to cash. It never borrows, and only trades when the target moves 10 points or more.</span></div>
+      <div><strong>Safety stop</strong><span>If the account falls 25% below its peak, it sells everything and pauses until Claude reviews and restarts it with a written reason.</span></div>
+      <div><strong>Learning</strong><span>Every trading day Claude records SPY's price, overnight gap, fear gauge and signals, and keeps every 5-minute bar. Each month the SPY tests are rerun. Rules change only when a new one wins on years it was not built on.</span></div>
+      <div><strong>Real money</strong><span>None yet. The checklist above has to pass first, around April 2027 at the earliest.</span></div>
     </div>
   </section>
 
-  <footer id="foot">Refreshed weekly by Claude.</footer>
+  <footer id="foot">Refreshed every trading day by Claude.</footer>
 </div>
 
 <script>
-const COLORS = { "stocks": "--stocks", "bonds": "--bonds", "gold": "--gold", "cash": "--cash" };
-const SERIES = { "stocks only": "--stocks", "60/40": "--bonds", "equal weight + trend": "--accent" };
-const NAMES = { "stocks only": "Stocks only", "60/40": "60% stocks / 40% bonds", "equal weight + trend": "This bot's rule" };
+const PALETTE = ["--stocks", "--accent", "--bonds", "--gold"];
 const pct = (x, d = 1) => (x >= 0 ? "+" : "−") + Math.abs(x * 100).toFixed(d) + "%";
 const pctPlain = (x, d = 0) => (x < 0 ? "−" : "") + Math.abs(x * 100).toFixed(d) + "%";
 const money = x => "$" + x.toLocaleString("en-US", { maximumFractionDigits: 0 });
 const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const fmtDate = s => new Date(s + (s.length === 7 ? "-01" : "") + "T00:00:00Z")
-  .toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
+  .toLocaleDateString("en-US", { month: "short", day: s.length > 7 ? "numeric" : undefined, year: "numeric", timeZone: "UTC" });
 
-function lineChart(el, series, labels, { log = false, height = 260 } = {}) {
-  const W = 860, H = height, L = 52, R = 14, T = 12, B = 26;
+function lineChart(el, series, labels, colors, { log = false, height = 260 } = {}) {
+  const W = 860, H = height, L = 60, R = 14, T = 12, B = 26;
   const all = Object.values(series).flat();
   const f = log ? Math.log10 : (v => v);
   let lo = f(Math.min(...all)), hi = f(Math.max(...all));
@@ -157,91 +181,108 @@ function lineChart(el, series, labels, { log = false, height = 260 } = {}) {
   const n = labels.length;
   const x = i => L + (n === 1 ? 0 : i / (n - 1)) * (W - L - R);
   const y = v => T + (1 - (f(v) - lo) / (hi - lo)) * (H - T - B);
-  let ticks = [];
-  if (log) { for (let p = Math.floor(lo); p <= Math.ceil(hi); p++) for (const m of [1, 3]) { const v = m * 10 ** p; if (Math.log10(v) >= lo && Math.log10(v) <= hi) ticks.push(v); } }
+  const ticks = [];
+  if (log) { for (let p = Math.floor(lo); p <= Math.ceil(hi); p++) for (const m of [1, 2, 5]) { const v = m * 10 ** p; if (Math.log10(v) >= lo && Math.log10(v) <= hi) ticks.push(v); } }
   else { for (let k = 0; k <= 4; k++) ticks.push(lo + (hi - lo) * k / 4); }
-  const tickLabel = v => log ? "$" + (v >= 1 ? v.toLocaleString("en-US") : v) : money(v);
+  const tickLabel = v => log ? "$" + v : money(v);
   let s = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img">`;
   for (const v of ticks) s += `<line class="grid" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${tickLabel(v)}</text>`;
   const step = Math.max(1, Math.round(n / 6));
-  for (let i = 0; i < n; i += step) s += `<text x="${x(i)}" y="${H - 6}" text-anchor="middle">${labels[i].slice(0, 4)}</text>`;
+  for (let i = 0; i < n; i += step) s += `<text x="${x(i)}" y="${H - 6}" text-anchor="middle">${labels[i].slice(0, labels[i].length > 7 ? 10 : 4)}</text>`;
   for (const [name, vals] of Object.entries(series)) {
-    const c = `var(${SERIES[name] || "--accent"})`;
+    const c = `var(${colors[name] || "--accent"})`;
     const d = vals.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join("");
-    s += `<path d="${d}" fill="none" style="stroke:${c}" stroke-width="${name.includes("trend") ? 2.4 : 1.5}" stroke-linejoin="round"/>`;
-    const i = vals.length - 1;
-    s += `<circle cx="${x(i)}" cy="${y(vals[i])}" r="3.5" style="fill:${c}"/>`;
+    s += `<path d="${d}" fill="none" style="stroke:${c}" stroke-width="2" stroke-linejoin="round"/>`;
+    s += `<circle cx="${x(vals.length - 1)}" cy="${y(vals[vals.length - 1])}" r="3.5" style="fill:${c}"/>`;
   }
   el.innerHTML = s + "</svg>";
 }
 
 function render(d) {
   const p = d.paper;
+  if (p.equity === undefined) throw new Error("no paper data");
   const halted = (p.status || "").startsWith("HALTED");
   $("status").textContent = halted ? "Paused by safety stop" : "Running";
   $("status").className = "pill " + (halted ? "halt" : "ok");
-  $("asof").textContent = p.as_of ? `Data through ${fmtDate(p.as_of)} · opened ${fmtDate(p.since)}` : "No data yet";
-  $("rule").textContent = "Paper money only";
+  $("asof").textContent = `Data through ${fmtDate(p.as_of)} · opened ${fmtDate(p.since)}`;
   $("equity").textContent = money(p.equity);
   $("ret").textContent = pct(p.return, 2);
   $("ret").className = "value " + (p.return >= 0 ? "pos" : "neg");
-  $("bench").textContent = `${p.benchmark_name} over same period: ${pct(p.benchmark, 2)}`;
+  $("bench").textContent = `Just holding SPY: ${pct(p.benchmark, 2)}`;
   $("dd").textContent = pctPlain(p.max_drawdown, 2);
   $("ddbar").style.width = Math.min(100, Math.abs(p.max_drawdown) / d.max_dd_limit * 100) + "%";
 
-  const alloc = { ...p.holdings, cash: p.cash_weight };
-  $("alloc").innerHTML = Object.entries(alloc).filter(([, w]) => w > 0.001)
-    .map(([k, w]) => `<span style="width:${w * 100}%;background:var(${COLORS[k] || "--cash"})" title="${k} ${pctPlain(w, 1)}"></span>`).join("");
-  $("legend").innerHTML = ["stocks", "bonds", "gold", "cash"].map(k =>
-    `<span><b style="background:var(${COLORS[k]})"></b>${k[0].toUpperCase() + k.slice(1)} <span class="num">${pctPlain(alloc[k] || 0, 0)}</span></span>`).join("");
+  const inSpy = p.holdings.SPY || 0;
+  $("alloc").innerHTML = [["SPY", inSpy, "--stocks"], ["Cash", p.cash_weight, "--cash"]].filter(([, w]) => w > 0.001)
+    .map(([k, w, c]) => `<span style="width:${w * 100}%;background:var(${c})" title="${k} ${pctPlain(w, 1)}"></span>`).join("");
+  $("legend").innerHTML = [["SPY", inSpy, "--stocks"], ["Cash", p.cash_weight, "--cash"]]
+    .map(([k, w, c]) => `<span><b style="background:var(${c})"></b>${k} <span class="num">${pctPlain(w)}</span></span>`).join("");
+
+  const t = d.today;
+  $("today").innerHTML = !t ? `<p class="muted">The first daily reading appears after the next trading day.</p>` : [
+    ["Close", `$${Number(t.close).toFixed(2)}`, fmtDate(t.date)],
+    ["Day", pct(t.day_return, 2), `overnight gap ${pct(t.overnight_gap, 2)}`],
+    ["Fear gauge (VIX)", Number(t.vix).toFixed(1), t.vix_term_ratio ? (t.vix_term_ratio > 1 ? "stressed: short-term fear above long-term" : "calm: short-term fear below long-term") : ""],
+    ["Trend", pct(t.pct_above_200d, 1), "vs its 200-day average"],
+    ["Recent swings", pctPlain(t.vol20, 1), "per year, last 20 days"],
+    ["Rule wants", pctPlain(t.vol_control_exposure), "of the account in SPY"],
+  ].map(([k, v, sub]) => `<div><span class="label">${k}</span><span class="value">${esc(v)}</span><span class="label">${esc(sub)}</span></div>`).join("");
+
+  $("gates").innerHTML = d.readiness.map(g =>
+    `<li><span class="tag ${g.ok ? "ok" : "no"}">${g.ok ? "PASS" : "NOT YET"}</span><span>${esc(g.name)} <span class="muted">(${esc(g.detail)})</span></span></li>`).join("");
 
   if (d.marks.length < 2) {
-    $("paperPanel").innerHTML = `<div class="empty">The chart starts after the second monthly step. One month is recorded so far (${fmtDate(d.marks[0]?.date || p.since)}).</div>`;
+    $("paperPanel").innerHTML = `<div class="empty">The chart starts after the second trading day.</div>`;
   } else {
-    lineChart($("paperPanel"), { "equal weight + trend": d.marks.map(m => m.equity) }, d.marks.map(m => m.date), { height: 220 });
+    lineChart($("paperPanel"), { "account": d.marks.map(m => m.equity) }, d.marks.map(m => m.date), { account: "--accent" }, { height: 220 });
   }
 
-  const bt = d.backtest;
-  lineChart($("btChart"), bt.curves, bt.dates, { log: true });
-  $("btTable").innerHTML = Object.entries(bt.stats).map(([k, s]) => `
-    <tr class="${k.includes("trend") ? "ours" : ""}">
-      <td><span class="swatch" style="background:var(${SERIES[k]})"></span>${NAMES[k] || k}</td>
+  const bt = d.backtest, names = Object.keys(bt.curves);
+  const colors = Object.fromEntries(names.map((n, i) => [n, PALETTE[i % PALETTE.length]]));
+  $("btTitle").textContent = `What to expect: the rule since ${bt.since.slice(0, 4)}`;
+  lineChart($("btChart"), bt.curves, bt.dates, colors, { log: true });
+  $("btTable").innerHTML = names.map(k => { const s = bt.stats[k]; return `
+    <tr class="${k === bt.ours ? "ours" : ""}">
+      <td><span class="swatch" style="background:var(${colors[k]})"></span>${esc(k)}</td>
       <td class="num">${pctPlain(s.cagr, 1)}</td><td class="num">${pctPlain(s.worst_year)}</td>
       <td class="num">${pctPlain(s.max_dd)}</td><td class="num">${pctPlain(s.pos_years)}</td>
-      <td class="num">${s.underwater_yrs.toFixed(1)} yrs</td></tr>`).join("");
+      <td class="num">${s.underwater_yrs.toFixed(1)} yrs</td></tr>`; }).join("");
 
-  const label = e => e.type === "rebalance"
-    ? "Rebalance: " + Object.entries(e.weights).map(([a, w]) => `${a} ${pctPlain(w)}`).join(", ")
-    : e.type === "fill" ? `${e.shares > 0 ? "Bought" : "Sold"} ${e.asset} · ${money(Math.abs(e.shares * e.price))} (cost ${money(e.cost)})`
-    : e.type === "halt" ? "Safety stop: " + e.reason : "Restarted: " + (e.note || "");
-  $("log").innerHTML = [...d.activity].reverse().map(e =>
-    `<li><span>${e.date ? fmtDate(e.date) : ""}</span><span>${label(e)}</span></li>`).join("")
-    || `<li><span></span><span class="muted">No activity yet.</span></li>`;
+  const f = d.facts, dow = Object.entries(f.avg_day_bps_by_weekday);
+  const best = dow.reduce((a, b) => b[1] > a[1] ? b : a), worst = dow.reduce((a, b) => b[1] < a[1] ? b : a);
+  $("facts").innerHTML = [
+    `SPY rose on ${pctPlain(f.up_days)} of days over ${f.years} years. A small edge, repeated, is where its growth comes from.`,
+    `Almost all of it came while the market was closed: ${pct(f.growth_overnight, 0)} from close to next open, against ${pct(f.growth_intraday, 0)} during trading hours. Trading that pattern costs more than it earns.`,
+    `After the ${f.days_down_3pct} days SPY fell more than 3%, the next day averaged ${pct(f.next_day_after_down_3pct_bps / 1e4, 2)}. ${pctPlain(f.share_of_big_days_when_vix_above_25)} of those big moves came when the fear gauge was above 25.`,
+    `Best weekday on average: ${best[0]} (${pct(best[1] / 1e4, 2)}); weakest: ${worst[0]} (${pct(worst[1] / 1e4, 2)}). Differences this small are mostly noise.`,
+    `Of five SPY rules tested, none beat simply holding SPY with confidence. Volatility control and the 200-day trend kept most of the return with about half the worst drop.`,
+  ].map(x => `<li>${x}</li>`).join("");
+
   $("extras").innerHTML = (d.extra || []).filter(a => a.rep && a.rep.equity !== undefined).map(a => {
     const m = a.rep, held = Object.values(m.holdings).reduce((x, y) => x + y, 0);
-    return `<section><h2>${a.title}</h2><div class="strip">
+    return `<section><h2>${esc(a.title)}</h2><div class="strip">
       <div class="cell"><span class="label">Account value</span><span class="value">${money(m.equity)}</span>
         <span class="label">${held > 0.001 ? `${pctPlain(held)} invested, ${pctPlain(m.cash_weight)} cash` : "all in cash"}</span></div>
       <div class="cell"><span class="label">Return since start</span><span class="value ${m.return >= 0 ? "pos" : "neg"}">${pct(m.return, 2)}</span>
-        <span class="label">${a.bench}: ${pct(m.benchmark, 2)}</span></div>
+        <span class="label">${esc(a.bench)}: ${pct(m.benchmark, 2)}</span></div>
       <div class="cell"><span class="label">Drop from peak</span><span class="value">${pctPlain(m.max_drawdown, 2)}</span>
-        <span class="label">safety stop ${a.stop}</span></div></div></section>`;
+        <span class="label">safety stop ${esc(a.stop)}</span></div></div></section>`;
   }).join("");
-  $("foot").textContent = `Refreshed weekly by Claude · last refresh ${d.generated}. Daily closing prices; real fills would differ slightly.`;
+
+  const label = e => e.type === "rebalance"
+    ? "Target set: " + Object.entries(e.weights).map(([a, w]) => `${a} ${pctPlain(w)}`).join(", ")
+    : e.type === "fill" ? `${e.shares > 0 ? "Bought" : "Sold"} ${e.asset} · ${money(Math.abs(e.shares * e.price))} (cost ${money(e.cost)})`
+    : e.type === "halt" ? "Safety stop: " + e.reason : "Restarted: " + (e.note || "");
+  $("log").innerHTML = [...d.activity].reverse().map(e =>
+    `<li><span>${e.date ? fmtDate(e.date) : ""}</span><span>${esc(label(e))}</span></li>`).join("")
+    || `<li><span></span><span class="muted">No activity yet.</span></li>`;
+  $("foot").textContent = `Refreshed every trading day by Claude · last refresh ${d.generated}. Daily closing prices; real fills would differ slightly.`;
 }
 
 fetch("data.json").then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
   .then(render)
-  .catch(() => { $("status").textContent = "Data unavailable"; $("status").className = "pill halt";
-    $("extras").innerHTML = (d.extra || []).filter(a => a.rep && a.rep.equity !== undefined).map(a => {
-    const m = a.rep, held = Object.values(m.holdings).reduce((x, y) => x + y, 0);
-    return `<section><h2>${a.title}</h2><div class="strip">
-      <div class="cell"><span class="label">Account value</span><span class="value">${money(m.equity)}</span>
-        <span class="label">${held > 0.001 ? `${pctPlain(held)} invested, ${pctPlain(m.cash_weight)} cash` : "all in cash"}</span></div>
-      <div class="cell"><span class="label">Return since start</span><span class="value ${m.return >= 0 ? "pos" : "neg"}">${pct(m.return, 2)}</span>
-        <span class="label">${a.bench}: ${pct(m.benchmark, 2)}</span></div>
-      <div class="cell"><span class="label">Drop from peak</span><span class="value">${pctPlain(m.max_drawdown, 2)}</span>
-        <span class="label">safety stop ${a.stop}</span></div></div></section>`;
-  }).join("");
-  $("foot").textContent = "The data file could not be loaded. Claude refreshes it weekly; check back after the next update."; });
+  .catch(() => {
+    $("status").textContent = "Data unavailable"; $("status").className = "pill halt";
+    $("foot").textContent = "The data file could not be loaded. Claude refreshes it every trading day; check back after the next update.";
+  });
 </script>

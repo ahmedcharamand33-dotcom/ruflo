@@ -194,9 +194,61 @@ def observation(df: pd.DataFrame) -> dict:
     }
 
 
+def _yahoo(ticker: str, **kw) -> pd.DataFrame:
+    import yfinance as yf
+
+    d = yf.download(ticker, auto_adjust=False, progress=False, **kw)
+    if isinstance(d.columns, pd.MultiIndex):
+        d.columns = d.columns.get_level_values(0)
+    return d
+
+
+def vix3m_close(date: str) -> float | None:
+    """3-month VIX on ``date``. VIX above VIX3M (ratio > 1) marks acute stress."""
+    try:
+        v = _yahoo("^VIX3M", period="10d")["Close"]
+        v.index = pd.to_datetime(v.index).tz_localize(None)
+        return round(float(v.loc[:date].iloc[-1]), 2)
+    except Exception:
+        return None
+
+
+def save_intraday(folder: Path, now: pd.Timestamp | None = None) -> str:
+    """Keep every completed 5-minute SPY bar Yahoo still has (it only serves ~60 days).
+
+    Bars are appended to one CSV per month, de-duplicated by timestamp, so running
+    daily builds a permanent intraday history that would otherwise disappear.
+    """
+    now = now or pd.Timestamp.now(tz="America/New_York")
+    bars = _yahoo("SPY", period="60d", interval="5m", prepost=False)
+    if bars.empty:
+        return "intraday: no bars returned"
+    bars.index = pd.to_datetime(bars.index).tz_convert("America/New_York")
+    if (now.hour, now.minute) < (16, 15):  # today's session is not finished
+        bars = bars[bars.index.date < now.date()]
+    bars = bars[["Open", "High", "Low", "Close", "Volume"]].rename(columns=str.lower).round(4)
+    folder.mkdir(parents=True, exist_ok=True)
+    added = 0
+    for month, chunk in bars.groupby(bars.index.strftime("%Y-%m")):
+        f = folder / f"{month}.csv"
+        chunk = chunk.copy()
+        chunk.index = chunk.index.strftime("%Y-%m-%d %H:%M")
+        chunk.index.name = "time"
+        if f.exists():
+            old = pd.read_csv(f, index_col="time")
+            merged = pd.concat([old, chunk[~chunk.index.isin(old.index)]]).sort_index()
+            added += len(merged) - len(old)
+        else:
+            merged, added = chunk, added + len(chunk)
+        merged.to_csv(f)
+    return f"intraday: {added} new 5-minute bars saved"
+
+
 def append_observation(path: Path, refresh: bool = True) -> str:
     """Add today's row to the SPY observation log (idempotent per date)."""
     row = observation(load_spy(refresh=refresh))
+    row["vix3m"] = vix3m_close(row["date"])
+    row["vix_term_ratio"] = round(row["vix"] / row["vix3m"], 3) if row["vix3m"] else None
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.exists():
         log = pd.read_csv(path)

@@ -8,7 +8,8 @@
     status       paper-trading results so far (markdown)
     dashboard    export the dashboard page's data (JSON)
     spy-research pre-registered SPY hypotheses, honest out-of-sample scorecard
-    spy-log      append today's SPY state to the daily observation log
+    spy-log      append today's SPY state (+ 5-minute bars) to the daily logs
+    readiness    real-money go-live gates for the SPY account
 """
 from __future__ import annotations
 
@@ -62,18 +63,24 @@ def main(argv: list[str] | None = None) -> int:
     st = sub.add_parser("status")
     st.add_argument("--journal", type=Path, required=True)
     db = sub.add_parser("dashboard")
-    db.add_argument("--journal", type=Path, required=True)
+    db.add_argument("--journal", type=Path, default=Path("paper/spy.jsonl"))
     db.add_argument("--out", type=Path, default=Path("dashboard/data.json"))
     sr = sub.add_parser("spy-research")
     sr.add_argument("--refresh", action="store_true")
+    sub.add_parser("readiness")
     sl = sub.add_parser("spy-log")
     sl.add_argument("--out", type=Path, default=Path("paper/spy_observations.csv"))
     args = ap.parse_args(argv)
 
+    if args.cmd == "readiness":
+        from .readiness import check, render as render_ready
+        print(render_ready(check()))
+        return 0
     if args.cmd in ("spy-research", "spy-log"):
         from . import spy_research as sres
         if args.cmd == "spy-log":
             print(sres.append_observation(args.out))
+            print(sres.save_intraday(args.out.parent / "spy_intraday"))
         else:
             df = sres.load_spy(refresh=args.refresh)
             print(sres.render(sres.evaluate(df), sres.facts(df)))
@@ -81,7 +88,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.cmd == "dashboard":
         from .dashboard import write
-        write(args.journal, args.out)
+        write(args.out, args.journal)
         print(f"wrote {args.out}")
         return 0
     if args.cmd == "portfolio":
