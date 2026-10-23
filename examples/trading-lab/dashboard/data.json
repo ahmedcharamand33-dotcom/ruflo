@@ -4,13 +4,13 @@
  "paper": {
   "status": "running",
   "since": "2026-10-22",
-  "as_of": "2026-10-22",
-  "days": 1,
-  "equity": 99980.0,
-  "return": -0.0002,
-  "benchmark": 0.0,
+  "as_of": "2026-10-23",
+  "days": 2,
+  "equity": 99457.82,
+  "return": -0.005422,
+  "benchmark": -0.005223,
   "benchmark_name": "SPY buy & hold",
-  "max_drawdown": -0.0002,
+  "max_drawdown": -0.005422,
   "holdings": {
    "SPY": 1.0
   },
@@ -21,6 +21,10 @@
   {
    "date": "2026-10-22",
    "equity": 99980.0
+  },
+  {
+   "date": "2026-10-23",
+   "equity": 99457.82
   }
  ],
  "activity": [
@@ -317,7 +321,7 @@
     3.5376,
     3.6239,
     3.7318,
-    3.5579,
+    3.5578,
     3.8075,
     3.7769,
     3.9516,
@@ -378,7 +382,7 @@
     6.6054,
     6.7824,
     6.7601,
-    6.7718
+    6.7365
    ],
    "Trend rule (this account's rule)": [
     1.0512,
@@ -440,7 +444,7 @@
     1.779,
     1.8209,
     1.8766,
-    1.8994,
+    1.8993,
     2.0064,
     1.9334,
     1.8804,
@@ -528,7 +532,7 @@
     3.9959,
     3.9451,
     3.6922,
-    3.7052,
+    3.7051,
     3.7501,
     3.9428,
     4.0336,
@@ -546,18 +550,18 @@
     4.6304,
     4.7545,
     4.7389,
-    4.7471
+    4.7223
    ]
   },
   "stats": {
    "Just holding SPY": {
     "years": 13.8,
-    "cagr": 0.1489,
+    "cagr": 0.1484,
     "vol": 0.1673,
-    "sharpe": 0.9137,
-    "sortino": 1.1199,
+    "sharpe": 0.9113,
+    "sortino": 1.1172,
     "max_dd": -0.3372,
-    "calmar": 0.4416,
+    "calmar": 0.4401,
     "pos_years": 0.8571,
     "worst_year": -0.1818,
     "pos_12m": 0.8755,
@@ -565,12 +569,12 @@
    },
    "Trend rule (this account's rule)": {
     "years": 13.8,
-    "cagr": 0.1196,
+    "cagr": 0.1192,
     "vol": 0.1167,
-    "sharpe": 1.0274,
-    "sortino": 1.1951,
+    "sharpe": 1.0239,
+    "sortino": 1.1914,
     "max_dd": -0.185,
-    "calmar": 0.6467,
+    "calmar": 0.6442,
     "pos_years": 0.7857,
     "worst_year": -0.1356,
     "pos_12m": 0.806,
@@ -581,52 +585,52 @@
  },
  "facts": {
   "years": 33.7,
-  "up_days": 0.5402826855123675,
-  "avg_day_bps": 4.754748768045011,
-  "growth_overnight": 24.17552661055784,
-  "growth_intraday": 0.26067837688942275,
+  "up_days": 0.5402190554704982,
+  "avg_day_bps": 4.7480388580491235,
+  "growth_overnight": 24.041612679526597,
+  "growth_intraday": 0.260801101829343,
   "days_down_3pct": 103,
-  "next_day_after_down_3pct_bps": 50.036608063570185,
+  "next_day_after_down_3pct_bps": 50.037080246110605,
   "share_of_big_days_when_vix_above_25": 0.8620689655172413,
   "avg_day_bps_by_weekday": {
    "Mon": 5.9,
    "Tue": 7.1,
    "Wed": 5.8,
    "Thu": 1.6,
-   "Fri": 3.4
+   "Fri": 3.3
   }
  },
  "today": {
-  "date": "2026-10-22",
-  "open": 766.37,
-  "close": 763.96,
-  "day_return": -0.01181,
-  "overnight_gap": -0.008692,
-  "vix": 19.03,
-  "vol20": 0.0983,
-  "pct_above_200d": 0.0557,
-  "rsi2": 24.3,
+  "date": "2026-10-23",
+  "open": 759.896,
+  "close": 759.97,
+  "day_return": -0.005223,
+  "overnight_gap": -0.00532,
+  "vix": 19.45,
+  "vol20": 0.0975,
+  "pct_above_200d": 0.0497,
+  "rsi2": 15.0,
   "vol_control_exposure": 1.0,
   "trend_200_signal": 1,
   "dip_signal": 0,
-  "vix3m": 20.12,
-  "vix_term_ratio": 0.946
+  "vix3m": 20.48,
+  "vix_term_ratio": 0.95
  },
  "readiness": [
   {
    "name": "At least 126 trading days of paper results",
    "ok": false,
-   "detail": "1 so far"
+   "detail": "2 so far"
   },
   {
    "name": "Bot ran on at least 95% of trading days",
    "ok": true,
-   "detail": "100% of 1 days"
+   "detail": "100% of 2 days"
   },
   {
    "name": "Paper results are in line with the tested rule",
    "ok": false,
-   "detail": "only 0 days of returns; need 20+ to judge"
+   "detail": "only 1 days of returns; need 20+ to judge"
   },
   {
    "name": "No safety-stop event left unexplained",
@@ -694,37 +698,44 @@
    }
   ],
   "hold_day": 0.057,
-  "days": 2,
+  "days": 3,
   "runners": [
    {
-    "rule": "gap fade (0.25-1% gaps)",
-    "total": -0.00117
-   },
-   {
     "rule": "intraday momentum (last 30 min)",
-    "total": -0.00138
+    "total": -0.00067
    },
    {
-    "rule": "opening-range breakout (5 min)",
-    "total": -0.00312
+    "rule": "gap fade (0.25-1% gaps)",
+    "total": -0.00192
    },
    {
     "rule": "VWAP trend",
-    "total": -0.00443
+    "total": -0.00329
+   },
+   {
+    "rule": "opening-range breakout (5 min)",
+    "total": -0.00347
    },
    {
     "rule": "noise-area breakout",
     "total": -0.00596
    }
   ],
-  "hold_total": -0.00073
+  "hold_total": -0.00074
  },
  "price_check": {
-  "days": 16,
+  "days": 17,
   "mismatches": 0,
-  "last": "2026-10-22"
+  "last": "2026-10-23"
  },
- "alpaca": null,
+ "alpaca": {
+  "equity": 100000.0,
+  "date": "2026-10-23",
+  "fills": 0,
+  "pending": 1,
+  "avg_vs_open_bps": null,
+  "avg_vs_assumed_bps": null
+ },
  "crises": [
   {
    "crisis": "1929 crash and Depression",
@@ -775,17 +786,17 @@
    "rep": {
     "status": "running",
     "since": "2026-10-16",
-    "as_of": "2026-10-22",
-    "days": 5,
-    "equity": 99997.68,
-    "return": -2.3e-05,
-    "benchmark": 0.004072,
+    "as_of": "2026-10-23",
+    "days": 6,
+    "equity": 99834.16,
+    "return": -0.001658,
+    "benchmark": 0.000265,
     "benchmark_name": "60/40",
-    "max_drawdown": -0.00397,
+    "max_drawdown": -0.005599,
     "holdings": {
-     "SPY": 0.334
+     "SPY": 0.332
     },
-    "cash_weight": 0.666,
+    "cash_weight": 0.668,
     "fills": 1
    }
   }
