@@ -24,7 +24,7 @@ from .portfolio import candidates
 
 
 def all_rules() -> dict:
-    """Portfolio rules plus single-asset live rules (e.g. SPY volatility control)."""
+    """Portfolio rules plus single-asset live rules (e.g. the SPY trend rule)."""
     from .spy_research import LIVE_RULES
     return {**candidates(), **LIVE_RULES}
 

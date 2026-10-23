@@ -13,6 +13,7 @@
     intraday     test the published day-trading rules on SPY minute bars (2016-today)
     intraday-log append today's result for every day-trading rule (forward test)
     alpaca-sync  mirror the SPY journal into Alpaca's paper account; record real fills
+    long-history run the SPY rules on S&P 500 daily data since 1928
     readiness    real-money go-live gates for the SPY account
 """
 from __future__ import annotations
@@ -75,6 +76,7 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("price-check")
     sub.add_parser("intraday")
     sub.add_parser("alpaca-sync")
+    sub.add_parser("long-history")
     il = sub.add_parser("intraday-log")
     il.add_argument("--out", type=Path, default=Path("paper/intraday_forward.csv"))
     sl = sub.add_parser("spy-log")
@@ -84,6 +86,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "readiness":
         from .readiness import check, render as render_ready
         print(render_ready(check()))
+        return 0
+    if args.cmd == "long-history":
+        from . import long_history as lh
+        print(lh.render(*lh.evaluate(lh.load())))
         return 0
     if args.cmd == "alpaca-sync":
         from .alpaca_mirror import sync

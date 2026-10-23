@@ -89,7 +89,8 @@ Live paper accounts, run weekly by a scheduled Claude routine (nothing to do on 
 | Journal | Account | Data | Safety stop |
 |---|---|---|---|
 | `paper/etf.jsonl` | $100k, "equal weight + trend" on SPY / IEF / GLD (opened 2026-10-16) | daily closes | -15% |
-| `paper/spy.jsonl` | **$100k, SPY volatility control (opened 2026-10-20) — the focus** | daily closes | -25% |
+| `paper/spy.jsonl` | **$100k, SPY 200-day trend rule (opened 2026-10-22 close) — the focus** | daily closes | -25% |
+| `paper/spy_volcontrol.jsonl` | retired 2026-10-23 after the 1928-today test: SPY volatility control | daily closes | -25% |
 | `paper/msft.jsonl` | retired 2026-10-21 (owner chose to focus on SPY): trend rule on Microsoft | daily closes | -25% |
 | `paper/history.jsonl` | retired 2026-10-19: the same rule on monthly-average index data | monthly | -15% |
 
@@ -128,10 +129,38 @@ Facts: nearly all of SPY's growth since 1993 came overnight (+2,433%) rather tha
 published 2008) and faded after. Nothing beats holding SPY with confidence; trend and volatility
 control keep most of the return with roughly half the worst drop.
 
-`paper/spy.jsonl` runs volatility control live ($100k, rebalance when the weight drifts 10 points,
--25% safety stop). `paper/spy_observations.csv` logs SPY's state every trading day (price, overnight
-gap, VIX and VIX3M, trend, 2-day RSI, every rule's signal) and `paper/spy_intraday/` keeps every
-5-minute bar (Yahoo only serves the last 60 days, so this history exists nowhere else).
+`paper/spy.jsonl` runs the 200-day trend rule live ($100k: hold SPY while it closes above its 200-day
+average, otherwise cash earning T-bill interest; -25% safety stop). It replaced volatility control on
+2026-10-23 after the long-history test below. `paper/alpaca.jsonl` mirrors it into Alpaca's paper account
+(`alpaca-sync`) and records every real fill against the open and against the close the journal assumed.
+`paper/spy_observations.csv` logs SPY's state every trading day (price, overnight gap, VIX and VIX3M,
+trend, 2-day RSI, every rule's signal) and `paper/spy_intraday/` keeps every 5-minute bar (Yahoo only
+serves the last 60 days, so this history exists nowhere else).
+
+### 98 years of S&P 500 (`python -m trading_lab long-history`)
+
+SPY starts in 1993, so the two best SPY rules were re-run unchanged on S&P 500 daily closes since 1928
+(dividends from Shiller added; cash earns T-bills from 1960 and 0% before, which understates both rules).
+
+| 1928-today | CAGR | Sharpe | Worst drop | Worst year | P(beats holding) |
+|---|---|---|---|---|---|
+| Buy & hold S&P 500 | 10.1% | 0.60 | -84% | -43% | |
+| Trend (above 200-day average) | 10.8% | 0.87 | -47% | -20% | 91% |
+| Volatility control (15%) | 9.3% | 0.75 | -58% | -26% | 54% |
+
+| Crash | Hold | Trend | Vol control |
+|---|---|---|---|
+| 1929-32 | -73% | -32% | -47% |
+| 1973-74 | -37% | 0% | -31% |
+| 1987 | -21% | -10% | -14% |
+| 2000-02 | -33% | -4% | -37% |
+| 2008-09 | -37% | -6% | -23% |
+| 2020 | -9% | -13% | -7% |
+| 2022 | -18% | -13% | -15% |
+
+Volatility control's "half the worst drop" held only since 2013; over 98 years it lost more than holding
+in 2000-02. The trend rule cut every major crash except the fast 2020 V-shape, where it sold low and
+bought back higher. Both rules were pre-registered before this test; nothing was tuned.
 
 ### Real-money gates (`python -m trading_lab readiness`)
 

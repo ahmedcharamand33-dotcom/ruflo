@@ -1,6 +1,4 @@
-{"type": "open", "cash": 100000.0, "rule": "spy volatility control"}
-{"type": "fill", "date": "2026-10-20", "asset": "SPY", "shares": 130.0045531330468, "price": 769.0499877929688, "cost": 19.996000000000002, "reason": "rebalance"}
-{"type": "rebalance", "date": "2026-10-20", "weights": {"SPY": 1.0}}
-{"type": "mark", "date": "2026-10-20", "equity": 99980.004, "cash": 0.003999999986262992, "prices": {"SPY": 769.0499877929688}}
-{"type": "mark", "date": "2026-10-21", "equity": 100505.22747296037, "cash": 0.003999999986262992, "prices": {"SPY": 773.0900268554688}}
-{"type": "mark", "date": "2026-10-22", "equity": 99318.28526806779, "cash": 0.003999999986262992, "prices": {"SPY": 763.9600219726562}}
+{"type": "open", "cash": 100000.0, "rule": "spy trend 200"}
+{"type": "fill", "date": "2026-10-22", "asset": "SPY", "shares": 130.87072245199042, "price": 763.9600219726562, "cost": 19.996000000000002, "reason": "rebalance"}
+{"type": "rebalance", "date": "2026-10-22", "weights": {"SPY": 1.0}}
+{"type": "mark", "date": "2026-10-22", "equity": 99980.004, "cash": 0.004000000000814907, "prices": {"SPY": 763.9600219726562}}

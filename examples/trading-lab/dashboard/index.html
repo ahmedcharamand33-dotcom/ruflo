@@ -61,6 +61,10 @@ ul.checks li { display: grid; grid-template-columns: 26px 1fr; gap: 8px; align-i
 .feed { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .feed li { display: grid; grid-template-columns: 64px 1fr; gap: 10px; }
 details { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px 20px; }
+table.crash { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+table.crash th { text-align: left; font-weight: 700; color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; padding: 6px 8px 6px 0; border-bottom: 1px solid var(--line); }
+table.crash td { padding: 6px 8px 6px 0; border-bottom: 1px solid var(--line); }
+table.crash th:not(:first-child), table.crash td:not(:first-child) { text-align: right; }
 details summary { cursor: pointer; font-family: var(--display); font-weight: 700; }
 details[open] summary { margin-bottom: 12px; }
 details .body { display: grid; gap: 10px; }
@@ -76,7 +80,7 @@ details .body { display: grid; gap: 10px; }
 const $ = (h) => { const t = document.createElement("template"); t.innerHTML = h.trim(); return t.content; };
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const usd = (v, d = 0) => (v < 0 ? "−$" : "$") + Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
-const pct = (v, d = 1) => (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v * 100).toFixed(d) + "%";
+const pct = (v, d = 1) => { const s = Math.abs(v * 100).toFixed(d); return (Number(s) === 0 ? "" : v > 0 ? "+" : "−") + s + "%"; };
 const day = (s) => new Date(s + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
 const RUNNER_NAMES = {
   "noise-area breakout": "Big-move chaser",
@@ -121,9 +125,8 @@ function render(d) {
   const holdEnd = start * (1 + p.benchmark);
   const running = p.status === "running";
   const t = d.today || {};
-  const exposure = t.vol_control_exposure ?? (p.holdings?.SPY || 0);
-  const vix = t.vix;
-  const mood = vix == null ? "" : vix < 20 ? "calm" : vix < 30 ? "jumpy" : "stormy";
+  const exposure = p.holdings?.SPY ?? (t.trend_200_signal ?? 0);
+  const above = t.pct_above_200d;
   const ahead = gain - (holdEnd - start);
 
   let html = `
@@ -144,8 +147,9 @@ function render(d) {
       ${exposure > 0.001 ? `<div class="spyp" style="width:${exposure * 100}%">${Math.round(exposure * 100)}% in SPY</div>` : ""}
       ${exposure < 0.999 ? `<div class="cash" style="width:${(1 - exposure) * 100}%">${Math.round((1 - exposure) * 100)}% cash</div>` : ""}
     </div>
-    <p>The rule: put more money in SPY when the market is calm, less when it is jumping around.
-      ${mood ? `Right now SPY is <b>${mood}</b> (fear gauge ${vix.toFixed(0)}), so ${exposure > 0.99 ? "all the money is in SPY" : `it keeps ${Math.round(exposure * 100)}% in SPY`}.` : ""}</p>
+    <p>The rule: own SPY while its price is above its average of the last 200 trading days (about 10 months).
+      When it drops below, sell and keep the money in cash, which earns interest, until it climbs back.
+      ${above != null ? `Right now SPY is <b>${Math.abs(above * 100).toFixed(1)}% ${above >= 0 ? "above" : "below"}</b> that line, so ${exposure > 0.5 ? "all the money is in SPY" : "the money waits in cash"}.` : ""}</p>
     <p class="muted small">Safety stop: if the piggy bank ever falls 25%, the bot sells everything and waits.
       ${d.price_check ? `Prices checked with a second source on ${d.price_check.days} days: ${d.price_check.mismatches ? `<b class="down">${d.price_check.mismatches} disagreed</b>` : "all agreed"}.` : ""}</p>
     ${alpacaLine(d.alpaca)}
@@ -172,7 +176,13 @@ function render(d) {
       <div class="stat"><span class="label">Grew per year</span><b class="num">${pct(so.cagr)} <span class="muted small">vs ${pct(sh.cagr)}</span></b></div>
       <div class="stat"><span class="label">Worst drop</span><b class="num">${pct(so.max_dd, 0)} <span class="muted small">vs ${pct(sh.max_dd, 0)}</span></b></div>
     </div>
-    <p class="muted small">Our rule grows a little slower than holding SPY, and its worst fall was about half as deep. That trade is the whole idea.</p>`;
+    <p class="muted small">Since 2013 our rule grew a little slower than holding SPY, and its worst fall was much smaller. That trade is the whole idea.</p>`;
+  }
+  if (d.crises) {
+    html += `<p class="label" style="margin-top:6px">The big crashes since 1929</p>
+    <div style="overflow-x:auto"><table class="crash"><thead><tr><th>Crash</th><th>Just holding</th><th>Our rule</th></tr></thead><tbody>` +
+      d.crises.map((c) => `<tr><td>${esc(c.crisis)}</td><td class="num ${c.hold >= 0 ? "up" : "down"}">${pct(c.hold, 0)}</td><td class="num ${c.rule >= 0 ? "up" : "down"}">${pct(c.rule, 0)}</td></tr>`).join("") +
+      `</tbody></table></div><p class="muted small">The rule stepped aside in most big crashes. It did worse in 2020, when the market fell and bounced back too fast for it.</p>`;
   }
   html += `</section>`;
 

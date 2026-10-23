@@ -195,8 +195,19 @@ def _vol_control_weights(closes: pd.DataFrame, bpy: int) -> pd.DataFrame:
     return pd.DataFrame({c: vol_target(pd.DataFrame({"close": closes[c]})) for c in closes.columns})
 
 
+def _trend_weights(closes: pd.DataFrame, bpy: int) -> pd.DataFrame:
+    """Live form of the 200-day trend hypothesis, one weight per column (single asset)."""
+    return pd.DataFrame({c: trend_200(pd.DataFrame({"close": closes[c]})) for c in closes.columns})
+
+
 # Rules the paper engine can run. Only pre-registered hypotheses that held up go here.
-LIVE_RULES = {"spy volatility control": _vol_control_weights}
+LIVE_RULES = {"spy volatility control": _vol_control_weights, "spy trend 200": _trend_weights}
+
+# The rule the SPY account runs. Switched from volatility control on 2026-10-23 after the
+# 1928-today test (long_history.py): vol control's worst drop was -58% and it lost more than
+# holding in 2000-02; the trend rule cut every major crash except 2020 (Sharpe 0.87 vs 0.75).
+LIVE_SPY_RULE = "spy trend 200"
+LIVE_SPY_SIGNAL = trend_200
 
 
 def observation(df: pd.DataFrame) -> dict:
