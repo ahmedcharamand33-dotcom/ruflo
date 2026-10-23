@@ -6,7 +6,8 @@ Timing convention (the most common source of fake profits):
     (market-on-close). lag=2 is the conservative choice for averaged data.
 
 Costs are charged on every change in held exposure: commission + slippage
-in basis points of traded notional.
+in basis points of traded notional. With ``cash_rate`` (a per-bar rate, e.g.
+the T-bill yield / 252) the uninvested part of the account earns interest.
 """
 from __future__ import annotations
 
@@ -37,7 +38,8 @@ class BacktestResult:
 
 
 def run_backtest(close: pd.Series, target: pd.Series, cost_bps: float = 5.0,
-                 slippage_bps: float = 5.0, execution_lag: int = 1) -> BacktestResult:
+                 slippage_bps: float = 5.0, execution_lag: int = 1,
+                 cash_rate: pd.Series | None = None) -> BacktestResult:
     if execution_lag < 1:
         raise ValueError("execution_lag must be >= 1 (lag 0 is look-ahead)")
     asset_ret = close.pct_change().fillna(0.0)
@@ -45,6 +47,9 @@ def run_backtest(close: pd.Series, target: pd.Series, cost_bps: float = 5.0,
     held = target.shift(execution_lag).fillna(0.0)
     costs = held.diff().abs().fillna(held.abs()) * (cost_bps + slippage_bps) / 1e4
     net = held * asset_ret - costs
+    if cash_rate is not None:  # rate known at the previous close, earned on what sat in cash
+        rate = cash_rate.reindex(close.index).ffill().shift(1).fillna(0.0)
+        net = net + (1.0 - held.abs()) * rate
     return BacktestResult(returns=net, held=held, costs=costs, trades=extract_trades(held, net))
 
 

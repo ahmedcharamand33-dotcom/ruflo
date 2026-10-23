@@ -80,3 +80,16 @@ def test_no_edge_found_in_random_walks(seed):
     close = synthetic_prices(seed=100 + seed)["close"]
     card = scorecard(walk_forward(close, default_candidates()))
     assert card["verdict"] == "NO EDGE"
+
+
+def test_cash_earns_interest_only_on_the_uninvested_part():
+    import pandas as pd
+    from trading_lab.backtest import run_backtest
+    idx = pd.date_range("2024-01-01", periods=5, freq="B")
+    close = pd.Series(100.0, index=idx)
+    rate = pd.Series(0.0002, index=idx)
+    flat = run_backtest(close, pd.Series(0.0, index=idx), 0, 0, cash_rate=rate).returns
+    half = run_backtest(close, pd.Series(0.5, index=idx), 0, 0, cash_rate=rate).returns
+    assert flat.iloc[1:].round(8).eq(0.0002).all()
+    assert half.iloc[2:].round(8).eq(0.0001).all()
+    assert flat.iloc[0] == 0.0  # no rate known before the first close

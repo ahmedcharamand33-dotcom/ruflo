@@ -108,6 +108,13 @@ function lineChart(series, labels, fmtY) {
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="line chart">${g}</svg>`;
 }
 
+function alpacaLine(a) {
+  if (!a) return "";
+  const cost = a.fills ? ` Real fills so far cost ${a.avg_vs_open_bps >= 0 ? "" : "minus "}${Math.abs(a.avg_vs_open_bps).toFixed(1)} hundredths of a percent compared with the opening price.` : "";
+  const wait = a.pending > 0 ? " An order is waiting for the next open." : "";
+  return `<p class="small"><b>Alpaca practice account:</b> ${usd(a.equity)}. It copies these trades with real (practice) orders, so you can check it on Alpaca's website.${wait}${cost}</p>`;
+}
+
 function render(d) {
   const p = d.paper, app = document.getElementById("app");
   const gain = p.equity - 100000, start = 100000;
@@ -141,6 +148,7 @@ function render(d) {
       ${mood ? `Right now SPY is <b>${mood}</b> (fear gauge ${vix.toFixed(0)}), so ${exposure > 0.99 ? "all the money is in SPY" : `it keeps ${Math.round(exposure * 100)}% in SPY`}.` : ""}</p>
     <p class="muted small">Safety stop: if the piggy bank ever falls 25%, the bot sells everything and waits.
       ${d.price_check ? `Prices checked with a second source on ${d.price_check.days} days: ${d.price_check.mismatches ? `<b class="down">${d.price_check.mismatches} disagreed</b>` : "all agreed"}.` : ""}</p>
+    ${alpacaLine(d.alpaca)}
   </section>`;
 
   const marks = d.marks || [];

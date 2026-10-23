@@ -15,12 +15,13 @@ from .metrics import consistency, summary
 from .paper import read_events
 from .paper_portfolio import report
 from .readiness import PERSONAL_GATES, answers, check
-from .spy_research import COST_BPS, SLIPPAGE_BPS, SPLIT, facts, load_spy, vol_target
+from .spy_research import COST_BPS, SLIPPAGE_BPS, SPLIT, cash_rate, facts, load_spy, vol_target
 
 SPY_JOURNAL = Path("paper/spy.jsonl")
 OBSERVATIONS = Path("paper/spy_observations.csv")
 PRICE_CHECK = Path("paper/price_check.csv")
 RACE_LOG = Path("paper/intraday_forward.csv")
+ALPACA_LOG = Path("paper/alpaca.jsonl")
 
 # Day-trading backtest, 2023-today at near-minimum costs (0.25 bp per side), from
 # `python -m trading_lab intraday`; refreshed by hand when the monthly run changes it.
@@ -48,7 +49,8 @@ def _backtest(spy: pd.DataFrame, since: str = SPLIT) -> dict:
     """The live rule against simply holding SPY, over the out-of-sample years."""
     runs = {
         "Just holding SPY": run_backtest(spy.close, pd.Series(1.0, index=spy.index), COST_BPS, SLIPPAGE_BPS),
-        "Volatility control (this account's rule)": run_backtest(spy.close, vol_target(spy), COST_BPS, SLIPPAGE_BPS),
+        "Volatility control (this account's rule)": run_backtest(spy.close, vol_target(spy), COST_BPS, SLIPPAGE_BPS,
+                                                                  cash_rate=cash_rate(spy.index)),
     }
     curves, stats, dates = {}, {}, []
     for name, res in runs.items():
@@ -83,6 +85,19 @@ def _race() -> dict:
     return out
 
 
+def _alpaca() -> dict | None:
+    events = read_events(ALPACA_LOG)
+    marks = [e for e in events if e["type"] == "mark"]
+    if not marks:
+        return None
+    fills = [e for e in events if e["type"] == "fill"]
+    avg = lambda k: round(sum(f[k] for f in fills if f.get(k) is not None) / len(fills), 2) if fills else None
+    return {"equity": marks[-1]["equity"], "date": marks[-1]["date"], "fills": len(fills),
+            "pending": len([e for e in events if e["type"] == "submit"]) - len(fills)
+                       - len([e for e in events if e["type"] == "unfilled"]),
+            "avg_vs_open_bps": avg("vs_open_bps"), "avg_vs_assumed_bps": avg("vs_assumed_bps")}
+
+
 def _price_check() -> dict | None:
     if not PRICE_CHECK.exists():
         return None
@@ -106,6 +121,7 @@ def build(journal: Path = SPY_JOURNAL, extra: list[dict] | None = None) -> dict:
         "personal": [{"gate": g, "answer": answers().get(i)} for i, g in enumerate(PERSONAL_GATES)],
         "race": _race(),
         "price_check": _price_check(),
+        "alpaca": _alpaca(),
         "extra": [{**{k: v for k, v in a.items() if k != "journal"}, "rep": _rounded(report(a["journal"]))}
                   for a in (EXTRA_ACCOUNTS if extra is None else extra) if a["journal"].exists()],
     }

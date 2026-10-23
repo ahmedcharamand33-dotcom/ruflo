@@ -15,6 +15,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from .data import bars_per_year
@@ -55,6 +56,8 @@ def replay(events: list[dict]) -> Book:
             book.shares[e["asset"]] = book.shares.get(e["asset"], 0.0) + e["shares"]
             book.cash -= e["shares"] * e["price"] + e["cost"]
             book.fills += 1
+        elif kind == "interest":
+            book.cash += e["amount"]
         elif kind == "rebalance":
             book.rebalanced = e["date"][:7]
         elif kind == "halt":
@@ -92,9 +95,11 @@ def _trade_to(book: Book, journal: Path, date: str, prices: pd.Series, weights: 
 
 def step(closes: pd.DataFrame, journal: Path, rule: str = DEFAULT_RULE, cash: float = 100_000.0,
          cost_bps: float = 5.0, slippage_bps: float = 5.0, max_dd: float = 0.15,
-         band: float | None = None) -> str:
+         band: float | None = None, cash_yield: float | None = None) -> str:
     """One unattended step. Rebalances on the first run of each month, or, with ``band``,
-    on any run where a holding has drifted more than ``band`` from its target weight."""
+    on any run where a holding has drifted more than ``band`` from its target weight.
+    With ``cash_yield`` (annual T-bill yield), idle cash earns interest for each
+    trading day since the last mark, as it would parked in a T-bill fund."""
     events = read_events(journal)
     if not events:
         append_event(journal, {"type": "open", "cash": cash, "rule": rule})
@@ -104,6 +109,12 @@ def step(closes: pd.DataFrame, journal: Path, rule: str = DEFAULT_RULE, cash: fl
     if book.last_date is not None and date <= book.last_date:
         return f"{date}: already processed"
 
+    if cash_yield and book.last_date and book.cash > 0:
+        days = int(np.busday_count(book.last_date, date))
+        amount = round(book.cash * cash_yield / 252.0 * days, 2)
+        if amount > 0:
+            append_event(journal, {"type": "interest", "date": date, "amount": amount, "yield": round(cash_yield, 5)})
+            book.cash += amount
     prices = closes.iloc[-1]
     rate = (cost_bps + slippage_bps) / 1e4
     equity = book.equity(prices)

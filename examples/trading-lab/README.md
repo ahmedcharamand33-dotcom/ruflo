@@ -111,14 +111,17 @@ python -m trading_lab dashboard            # SPY account first; side accounts in
 `spy_research.py` tests five hypotheses about SPY, fixed before looking at results and all
 reported (1994-2012 discovery, 2013-today out-of-sample, 2 bp per trade side, deflated for 5 trials):
 
-| 2013-today | CAGR | Sharpe | Worst drop | P(beats holding SPY) |
+| 2013-today (cash earns T-bill interest) | CAGR | Sharpe | Worst drop | P(beats holding SPY) |
 |---|---|---|---|---|
-| Buy & hold SPY | 15.0% | 0.92 | -34% | |
-| Trend (above 200-day average) | 11.7% | 1.01 | -20% | 20% |
-| Buy the dip (RSI(2) < 10 in uptrend) | 4.4% | 0.75 | -11% | 4% |
-| Turn of the month | 2.2% | 0.34 | -10% | 0% |
-| Volatility control (15%) | 13.0% | 1.03 | -19% | 22% |
-| Overnight only | -1.0% | -0.04 | -38% | 0% |
+| Buy & hold SPY | 14.9% | 0.91 | -34% | |
+| Trend (above 200-day average) | 12.0% | 1.03 | -19% | 23% |
+| Buy the dip (RSI(2) < 10 in uptrend) | 6.0% | 1.02 | -8% | 22% |
+| Turn of the month | 3.5% | 0.53 | -10% | 0% |
+| Volatility control (15%) | 13.1% | 1.04 | -19% | 23% |
+| Overnight only | -1.1% | -0.04 | -38% | 0% |
+
+Idle cash earns the 13-week T-bill yield (^IRX) in every backtest and in the paper accounts, as it
+would parked in a T-bill fund; it matters most for rules that are often out of the market.
 
 Facts: nearly all of SPY's growth since 1993 came overnight (+2,433%) rather than during the day
 (+26%), but trading it costs more than it earns. The dip rule was strong before 2013 (Sharpe 0.85,

@@ -52,3 +52,18 @@ def test_circuit_breaker_goes_to_cash_and_stays_halted(tmp_path):
     assert rep["max_drawdown"] > -0.15  # stopped near the limit, not at the bottom
     resume(j, "reviewed")
     assert replay(read_events(j)).halted is None
+
+
+def test_idle_cash_accrues_interest_per_trading_day(tmp_path):
+    import pandas as pd
+    from trading_lab import paper_portfolio as pp
+    j = tmp_path / "j.jsonl"
+    idx = pd.date_range("2026-01-02", periods=300, freq="B")
+    closes = pd.DataFrame({"SPY": 100.0}, index=idx)
+    pp.append_event(j, {"type": "open", "cash": 1000.0, "rule": "x"})
+    pp.append_event(j, {"type": "mark", "date": "2026-10-19", "equity": 1000.0, "cash": 1000.0, "prices": {"SPY": 100.0}})
+    pp.append_event(j, {"type": "halt", "date": "2026-10-19", "reason": "test"})
+    day = closes.loc[:"2026-10-21"]
+    pp.step(day, j, cash_yield=0.0504)
+    interest = [e for e in pp.read_events(j) if e["type"] == "interest"]
+    assert interest and interest[0]["amount"] == 0.4  # 1000 * 5.04% / 252 * 2 trading days

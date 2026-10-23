@@ -12,6 +12,7 @@
     price-check  compare Yahoo's SPY closes with Alpaca's; log any mismatch
     intraday     test the published day-trading rules on SPY minute bars (2016-today)
     intraday-log append today's result for every day-trading rule (forward test)
+    alpaca-sync  mirror the SPY journal into Alpaca's paper account; record real fills
     readiness    real-money go-live gates for the SPY account
 """
 from __future__ import annotations
@@ -73,6 +74,7 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("readiness")
     sub.add_parser("price-check")
     sub.add_parser("intraday")
+    sub.add_parser("alpaca-sync")
     il = sub.add_parser("intraday-log")
     il.add_argument("--out", type=Path, default=Path("paper/intraday_forward.csv"))
     sl = sub.add_parser("spy-log")
@@ -82,6 +84,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "readiness":
         from .readiness import check, render as render_ready
         print(render_ready(check()))
+        return 0
+    if args.cmd == "alpaca-sync":
+        from .alpaca_mirror import sync
+        print(sync())
         return 0
     if args.cmd in ("intraday", "intraday-log"):
         from . import intraday, minute_data
@@ -114,8 +120,14 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "autopilot":
         if args.resume:
             pp.resume(args.journal, args.resume)
+        try:
+            from .spy_research import tbill_yield
+            cash_yield = float(tbill_yield().iloc[-1])
+        except Exception:  # no rate today: skip interest rather than guess one
+            cash_yield = None
         print(pp.step(load_universe(args.universe), args.journal, args.rule, cash=args.cash, max_dd=args.max_dd,
-                      cost_bps=args.cost_bps, slippage_bps=args.slippage_bps, band=args.band))
+                      cost_bps=args.cost_bps, slippage_bps=args.slippage_bps, band=args.band,
+                      cash_yield=cash_yield))
         return 0
     if args.cmd == "status":
         print(_status_markdown(pp.report(args.journal)))

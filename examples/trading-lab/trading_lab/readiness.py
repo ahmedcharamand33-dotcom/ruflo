@@ -16,7 +16,7 @@ import pandas as pd
 
 from .backtest import run_backtest
 from .paper import read_events
-from .spy_research import COST_BPS, SLIPPAGE_BPS, SPLIT, load_spy, vol_target
+from .spy_research import COST_BPS, SLIPPAGE_BPS, SPLIT, cash_rate, load_spy, vol_target
 
 MIN_TRADING_DAYS = 126      # about six months
 MIN_COVERAGE = 0.95         # share of trading days the bot actually ran
@@ -52,7 +52,8 @@ def check(journal: Path = Path("paper/spy.jsonl"), spy: pd.DataFrame | None = No
     days = len(equity)
     coverage = days / max(1, len(trading_days))
 
-    expected = run_backtest(spy.close, vol_target(spy), COST_BPS, SLIPPAGE_BPS).returns.loc[SPLIT:]
+    expected = run_backtest(spy.close, vol_target(spy), COST_BPS, SLIPPAGE_BPS,
+                            cash_rate=cash_rate(spy.index)).returns.loc[SPLIT:]
     live = equity.pct_change().dropna()
     if len(live) >= 20 and expected.std() > 0:
         z = (live.mean() - expected.mean()) / (expected.std() / math.sqrt(len(live)))

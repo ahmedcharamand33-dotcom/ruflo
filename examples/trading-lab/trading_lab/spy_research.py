@@ -44,6 +44,27 @@ def load_spy(refresh: bool = False) -> pd.DataFrame:
     return drop_unfinished_session(df.dropna(subset=["close"]))
 
 
+def tbill_yield(refresh: bool = False) -> pd.Series:
+    """13-week T-bill yield (^IRX) as a decimal, daily since 1960; cached like the SPY file."""
+    cache = CACHE_DIR / "tbill.csv"
+    stale = cache.exists() and pd.Timestamp(cache.stat().st_mtime, unit="s").date() < pd.Timestamp.now().date()
+    if refresh or not cache.exists() or stale:
+        try:
+            d = _yahoo("^IRX", start="1960-01-01")["Close"]
+            d.index = pd.to_datetime(d.index).tz_localize(None)
+            CACHE_DIR.mkdir(parents=True, exist_ok=True)
+            (d / 100.0).rename("tbill").to_csv(cache)
+        except Exception:
+            if not cache.exists():
+                raise
+    return pd.read_csv(cache, index_col=0, parse_dates=True)["tbill"].dropna()
+
+
+def cash_rate(index: pd.Index) -> pd.Series:
+    """Per-trading-day interest on cash, aligned to ``index``."""
+    return (tbill_yield().reindex(index, method="ffill") / 252.0).fillna(0.0)
+
+
 def rsi(close: pd.Series, n: int) -> pd.Series:
     delta = close.diff()
     up = delta.clip(lower=0).ewm(alpha=1 / n, adjust=False).mean()
@@ -122,8 +143,10 @@ def facts(df) -> dict:
 def evaluate(df: pd.DataFrame, lag: int = 1) -> pd.DataFrame:
     """One row per hypothesis per period, against buy-and-hold over the same days."""
     n_trials = len(HYPOTHESES) + 1  # + overnight_only
+    cash = cash_rate(df.index)
     bh = run_backtest(df.close, pd.Series(1.0, index=df.index), COST_BPS, SLIPPAGE_BPS, lag).returns
-    series = {name: run_backtest(df.close, fn(df), COST_BPS, SLIPPAGE_BPS, lag) for name, fn in HYPOTHESES.items()}
+    series = {name: run_backtest(df.close, fn(df), COST_BPS, SLIPPAGE_BPS, lag, cash)
+              for name, fn in HYPOTHESES.items()}
     rows = []
     for period, sl in (("1994-2012", slice("1994-01-01", "2012-12-31")), ("2013-now", slice(SPLIT, None))):
         b = bh.loc[sl]
