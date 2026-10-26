@@ -89,8 +89,12 @@ class Alpaca:
         return self._get(f"{PAPER_URL}/v2/orders/{order_id}")
 
     def day_open(self, date: str) -> float | None:
-        bars = self._get(f"{DATA_URL}/v2/stocks/{SYMBOL}/bars", timeframe="1Day", start=date, end=date,
-                         feed="sip", adjustment="raw").get("bars") or []
+        import pandas as pd
+
+        # the free data plan refuses the most recent 15 minutes, so never ask past now - 20 min
+        end = min(pd.Timestamp(date, tz="UTC") + pd.Timedelta(days=1), pd.Timestamp.now(tz="UTC") - pd.Timedelta(minutes=20))
+        bars = self._get(f"{DATA_URL}/v2/stocks/{SYMBOL}/bars", timeframe="1Day", start=date,
+                         end=end.strftime("%Y-%m-%dT%H:%M:%SZ"), feed="sip", adjustment="raw").get("bars") or []
         return float(bars[0]["o"]) if bars else None
 
     def submit(self, order: dict) -> dict:
