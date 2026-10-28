@@ -3,3 +3,4 @@
 {"type": "fill", "order_id": "99484b56-2bda-4708-a070-c4548d53b6fe", "date": "2026-10-26", "side": "buy", "qty": 130.484543786, "price": 762.542345, "assumed_close": 759.969970703125, "vs_assumed_bps": 33.85, "open": 762.25, "vs_open_bps": 3.84}
 {"type": "mark", "date": "2026-10-26", "equity": 100363.75, "spy_value": 99863.735896, "target_weight": 1.0}
 {"type": "mark", "date": "2026-10-27", "equity": 101018.77, "spy_value": 100518.768306, "target_weight": 1.0}
+{"type": "mark", "date": "2026-10-28", "equity": 100906.55, "spy_value": 100406.551598, "target_weight": 1.0}
