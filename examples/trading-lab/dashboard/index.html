@@ -1,0 +1,249 @@
+<title>Trading Lab Ledger</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&display=swap">
+<style>
+/* Layout: one narrow column you read top to bottom, biggest answer first, details folded away at the end. */
+:root {
+  --bg: #f4f6f2; --card: #ffffff; --ink: #17231c; --muted: #5a685f; --line: #dde3dc;
+  --piggy: #c8486e; --spy: #8a959c; --good: #2b8553; --bad: #bf3f35; --wait: #a77a12;
+  --display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111713; --card: #19211c; --ink: #e7eee9; --muted: #9eaba3; --line: #2a352e;
+  --piggy: #ef7c9f; --spy: #7f8b92; --good: #5dc68b; --bad: #ef7a6e; --wait: #e0b04a; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #111713; --card: #19211c; --ink: #e7eee9; --muted: #9eaba3; --line: #2a352e;
+  --piggy: #ef7c9f; --spy: #7f8b92; --good: #5dc68b; --bad: #ef7a6e; --wait: #e0b04a; color-scheme: dark }
+
+body { background: var(--bg); color: var(--ink); font: 16px/1.55 var(--body); }
+main { max-width: 680px; margin: 0 auto; padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 18px; }
+h1, h2 { font-family: var(--display); font-weight: 700; text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: 1.15rem; }
+h2 { font-size: 1.2rem; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+.small { font-size: 0.875rem; }
+.num { font-variant-numeric: tabular-nums; }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.pill { font-size: 0.8rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; border: 1.5px solid currentColor; }
+.pill.ok { color: var(--good); } .pill.stop { color: var(--bad); }
+section { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: grid; gap: 14px; min-width: 0; }
+.hero { gap: 6px; }
+.label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; }
+.big { font-family: var(--display); font-size: clamp(2.6rem, 9vw, 3.6rem); font-weight: 700; line-height: 1.05; }
+.up { color: var(--good); } .down { color: var(--bad); }
+.say { font-size: 1.05rem; max-width: 60ch; }
+.split { display: flex; height: 26px; border-radius: 8px; overflow: hidden; background: var(--line); }
+.split div { display: flex; align-items: center; padding: 0 10px; font-size: 0.8rem; font-weight: 700; color: var(--card); white-space: nowrap; }
+.split .spyp { background: var(--piggy); } .split .cash { background: var(--spy); }
+.bar { height: 12px; border-radius: 6px; background: var(--line); overflow: hidden; }
+.bar div { height: 100%; background: var(--piggy); min-width: 4px; }
+svg { width: 100%; height: auto; display: block; overflow: visible; }
+.key { display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.875rem; color: var(--muted); }
+.key i { display: inline-block; width: 14px; height: 4px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+.stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.stat { display: grid; gap: 2px; }
+.stat b { font-family: var(--display); font-size: 1.5rem; }
+ul.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+ul.checks li { display: grid; grid-template-columns: 26px 1fr; gap: 8px; align-items: start; }
+.mark { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 0.8rem; font-weight: 700; color: var(--card); }
+.mark.yes { background: var(--good); } .mark.no { background: var(--line); color: var(--muted); }
+.quote { font-style: italic; color: var(--muted); font-size: 0.9rem; }
+.runner { display: grid; grid-template-columns: minmax(0, 1fr) 70px; gap: 4px 12px; align-items: center; }
+.track { height: 10px; position: relative; background: var(--line); border-radius: 5px; }
+.track span { position: absolute; top: 0; bottom: 0; border-radius: 5px; }
+.track .zero { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--muted); }
+.feed { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.feed li { display: grid; grid-template-columns: 64px 1fr; gap: 10px; }
+details { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px 20px; }
+table.crash { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+table.crash th { text-align: left; font-weight: 700; color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; padding: 6px 8px 6px 0; border-bottom: 1px solid var(--line); }
+table.crash td { padding: 6px 8px 6px 0; border-bottom: 1px solid var(--line); }
+table.crash th:not(:first-child), table.crash td:not(:first-child) { text-align: right; }
+details summary { cursor: pointer; font-family: var(--display); font-weight: 700; }
+details[open] summary { margin-bottom: 12px; }
+details .body { display: grid; gap: 10px; }
+:focus-visible { outline: 3px solid var(--piggy); outline-offset: 2px; }
+@media (max-width: 420px) { section { padding: 16px; } .stats { grid-template-columns: 1fr; } }
+</style>
+
+<main id="app">
+  <div class="top"><h1>SPY piggy bank</h1><span class="muted small">Loading…</span></div>
+</main>
+
+<script>
+const $ = (h) => { const t = document.createElement("template"); t.innerHTML = h.trim(); return t.content; };
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const usd = (v, d = 0) => (v < 0 ? "−$" : "$") + Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const pct = (v, d = 1) => { const s = Math.abs(v * 100).toFixed(d); return (Number(s) === 0 ? "" : v > 0 ? "+" : "−") + s + "%"; };
+const day = (s) => new Date(s + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+const RUNNER_NAMES = {
+  "noise-area breakout": "Big-move chaser",
+  "intraday momentum (last 30 min)": "Morning-to-afternoon follower",
+  "gap fade (0.25-1% gaps)": "Morning-jump undoer",
+  "opening-range breakout (5 min)": "First-5-minutes follower",
+  "VWAP trend": "Average-price flipper",
+};
+const PERSONAL_SHORT = ["Plan for a 20% drop", "Money can sit 5 years", "Start small (a quarter of the goal)", "Broker account", "Taxes question"];
+
+function lineChart(series, labels, fmtY) {
+  const W = 620, H = 240, L = 70, R = 12, T = 10, B = 26;
+  const all = series.flatMap((s) => s.values);
+  let lo = Math.min(...all), hi = Math.max(...all);
+  const pad = (hi - lo) * 0.08 || hi * 0.01; lo -= pad; hi += pad;
+  const n = labels.length, x = (i) => L + (i / Math.max(1, n - 1)) * (W - L - R), y = (v) => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
+  const ticks = [0, 1, 2, 3].map((k) => lo + (k / 3) * (hi - lo));
+  const step = Math.max(1, Math.ceil(n / 5));
+  let g = ticks.map((t) => `<line x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}" stroke="var(--line)"/>` +
+    `<text x="${L - 8}" y="${y(t) + 4}" text-anchor="end" font-size="16" fill="var(--muted)">${fmtY(t)}</text>`).join("");
+  g += labels.map((lab, i) => (i % step === 0 || i === n - 1) && !(i !== n - 1 && n - 1 - i < step / 2)
+    ? `<text x="${x(i)}" y="${H - 4}" text-anchor="middle" font-size="16" fill="var(--muted)">${esc(lab)}</text>` : "").join("");
+  for (const s of series) {
+    const pts = s.values.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+    g += `<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="${s.width || 2.5}" stroke-linejoin="round" stroke-linecap="round"/>`;
+    const last = s.values.length - 1;
+    g += `<circle cx="${x(last)}" cy="${y(s.values[last])}" r="4" fill="${s.color}"/>`;
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="line chart">${g}</svg>`;
+}
+
+function alpacaLine(a) {
+  if (!a) return "";
+  const cost = a.fills ? ` Real fills so far cost ${a.avg_vs_open_bps >= 0 ? "" : "minus "}${Math.abs(a.avg_vs_open_bps).toFixed(1)} hundredths of a percent compared with the opening price.` : "";
+  const wait = a.pending > 0 ? " An order is waiting for the next open." : "";
+  return `<p class="small"><b>Alpaca practice account:</b> ${usd(a.equity)}. It copies these trades with real (practice) orders, so you can check it on Alpaca's website.${wait}${cost}</p>`;
+}
+
+function render(d) {
+  const p = d.paper, app = document.getElementById("app");
+  const gain = p.equity - 100000, start = 100000;
+  const holdEnd = start * (1 + p.benchmark);
+  const running = p.status === "running";
+  const t = d.today || {};
+  const exposure = p.holdings?.SPY ?? (t.trend_200_signal ?? 0);
+  const above = t.pct_above_200d;
+  const ahead = gain - (holdEnd - start);
+
+  let html = `
+  <div class="top"><h1>SPY piggy bank</h1>
+    <span class="pill ${running ? "ok" : "stop"}">${running ? "Running · practice money" : "Paused by safety stop"}</span></div>
+
+  <section class="hero" aria-label="balance">
+    <span class="label">In the piggy bank</span>
+    <span class="big num">${usd(p.equity)}</span>
+    <p class="say"><b class="${gain >= 0 ? "up" : "down"}">${usd(gain)}</b> since it started on ${day(p.since)}.
+      Just holding SPY would be ${gain === holdEnd - start ? "the same" : `${usd(Math.abs(ahead))} ${ahead > 0 ? "behind" : "ahead"}`}.
+      ${p.days < 20 ? "It is far too early to tell anything from this." : ""}</p>
+  </section>
+
+  <section aria-label="right now">
+    <h2>What it is doing right now</h2>
+    <div class="split" aria-label="money in SPY versus cash">
+      ${exposure > 0.001 ? `<div class="spyp" style="width:${exposure * 100}%">${Math.round(exposure * 100)}% in SPY</div>` : ""}
+      ${exposure < 0.999 ? `<div class="cash" style="width:${(1 - exposure) * 100}%">${Math.round((1 - exposure) * 100)}% cash</div>` : ""}
+    </div>
+    <p>The rule: own SPY while its price is above its average of the last 200 trading days (about 10 months).
+      When it drops below, sell and keep the money in cash, which earns interest, until it climbs back.
+      ${above != null ? `Right now SPY is <b>${Math.abs(above * 100).toFixed(1)}% ${above >= 0 ? "above" : "below"}</b> that line, so ${exposure > 0.5 ? "all the money is in SPY" : "the money waits in cash"}.` : ""}</p>
+    <p class="muted small">Safety stop: if the piggy bank ever falls 25%, the bot sells everything and waits.
+      ${d.price_check ? `Prices checked with a second source on ${d.price_check.days} days: ${d.price_check.mismatches ? `<b class="down">${d.price_check.mismatches} disagreed</b>` : "all agreed"}.` : ""}</p>
+    ${alpacaLine(d.alpaca)}
+  </section>`;
+
+  const marks = d.marks || [];
+  html += `<section aria-label="growth"><h2>Piggy bank vs just holding SPY</h2>`;
+  if (marks.length >= 5) {
+    const spy0 = marks[0].equity;
+    html += lineChart([{ values: marks.map((m) => m.equity), color: "var(--piggy)" }], marks.map((m) => day(m.date)), (v) => usd(v / 1000, 1) + "k");
+    html += `<div class="key"><span><i style="background:var(--piggy)"></i>Piggy bank</span></div>`;
+  } else {
+    html += `<p class="muted">This chart fills in after a week of trading. ${marks.length} day${marks.length === 1 ? "" : "s"} so far.</p>`;
+  }
+  const bt = d.backtest;
+  if (bt) {
+    const ours = bt.curves[bt.ours], hold = bt.curves["Just holding SPY"];
+    const so = bt.stats[bt.ours], sh = bt.stats["Just holding SPY"];
+    html += `<p class="label" style="margin-top:6px">The same rule in the past: $100,000 from ${bt.dates[0].slice(0, 4)}</p>`;
+    html += lineChart([{ values: hold.map((v) => v * 100000), color: "var(--spy)", width: 2 }, { values: ours.map((v) => v * 100000), color: "var(--piggy)" }],
+      bt.dates.map((s) => s.slice(0, 4)), (v) => "$" + Math.round(v / 1000) + "k");
+    html += `<div class="key"><span><i style="background:var(--piggy)"></i>Our rule</span><span><i style="background:var(--spy)"></i>Just holding SPY</span></div>
+    <div class="stats">
+      <div class="stat"><span class="label">Grew per year</span><b class="num">${pct(so.cagr)} <span class="muted small">vs ${pct(sh.cagr)}</span></b></div>
+      <div class="stat"><span class="label">Worst drop</span><b class="num">${pct(so.max_dd, 0)} <span class="muted small">vs ${pct(sh.max_dd, 0)}</span></b></div>
+    </div>
+    <p class="muted small">Since 2013 our rule grew a little slower than holding SPY, and its worst fall was much smaller. That trade is the whole idea.</p>`;
+  }
+  if (d.crises) {
+    html += `<p class="label" style="margin-top:6px">The big crashes since 1929</p>
+    <div style="overflow-x:auto"><table class="crash"><thead><tr><th>Crash</th><th>Just holding</th><th>Our rule</th></tr></thead><tbody>` +
+      d.crises.map((c) => `<tr><td>${esc(c.crisis)}</td><td class="num ${c.hold >= 0 ? "up" : "down"}">${pct(c.hold, 0)}</td><td class="num ${c.rule >= 0 ? "up" : "down"}">${pct(c.rule, 0)}</td></tr>`).join("") +
+      `</tbody></table></div><p class="muted small">The rule stepped aside in most big crashes. It did worse in 2020, when the market fell and bounced back too fast for it.</p>`;
+  }
+  html += `</section>`;
+
+  const r = d.race;
+  if (r) {
+    const rows = r.days > 0 ? r.runners.map((x) => ({ rule: x.rule, v: x.total })) : r.backtest.map((x) => ({ rule: x.rule, v: x.cagr }));
+    const ref = r.days > 0 ? r.hold_total : r.hold_day;
+    const span = Math.max(...rows.map((x) => Math.abs(x.v)), Math.abs(ref || 0), 0.01);
+    const xz = 50, sc = (v) => (v / span) * 50;
+    html += `<section aria-label="day trading race"><h2>The day-trading race</h2>
+      <p>Five runners copied from famous traders. Each one buys and sells SPY within the same day and pays a small fee every time.</p>
+      <p class="label">${r.days > 0 ? `Live race: ${r.days} day${r.days === 1 ? "" : "s"} so far` : "Practice laps, 2023 to today (per year)"}</p>`;
+    for (const x of rows) {
+      const w = Math.abs(sc(x.v)), left = x.v >= 0 ? xz : xz - w;
+      html += `<div class="runner"><div><span class="small">${esc(RUNNER_NAMES[x.rule] || x.rule)}</span>
+        <div class="track"><span style="left:${left}%;width:${w}%;background:${x.v >= 0 ? "var(--good)" : "var(--bad)"}"></span><span class="zero" style="left:${xz}%"></span></div></div>
+        <b class="num ${x.v >= 0 ? "up" : "down"}">${pct(x.v)}</b></div>`;
+    }
+    html += `<p class="muted small">${r.days > 0 ? "Live results start from $0 on Oct 21." : "The live race starts tonight; the bars switch over once it has results."}
+      For comparison, simply holding SPY from morning to afternoon made ${pct(ref || 0)}. ${r.days > 0 ? "" : "So far no runner beats that."}</p></section>`;
+  }
+
+  const gates = d.readiness || [];
+  const daysDone = p.days, need = 126;
+  const left = Math.max(0, need - daysDone);
+  const eta = new Date(Date.now() + left * 1.45 * 864e5).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const botShort = ["126 practice days", "Bot ran almost every day", "Practice matches the past tests", "No unexplained safety stops"];
+  html += `<section aria-label="real money checklist"><h2>Before real money</h2>
+    <div class="top"><span><b class="num">${daysDone}</b> of ${need} practice days</span><span class="muted small">${left ? `earliest finish: ${eta}` : "done"}</span></div>
+    <div class="bar"><div style="width:${Math.min(100, (daysDone / need) * 100)}%"></div></div>
+    <p class="label">The bot has to earn</p><ul class="checks">` +
+    gates.map((g, i) => `<li><span class="mark ${g.ok ? "yes" : "no"}">${g.ok ? "✓" : ""}</span><span>${esc(botShort[i] || g.name)} <span class="muted small">(${esc(g.detail)})</span></span></li>`).join("") +
+    `</ul><p class="label">You decide</p><ul class="checks">` +
+    (d.personal || []).map((g, i) => `<li><span class="mark ${g.answer ? "yes" : "no"}">${g.answer ? "✓" : ""}</span><span>${esc(PERSONAL_SHORT[i] || g.gate)}
+      ${g.answer ? `<br><span class="quote">“${esc(g.answer.answer)}”</span>` : `<span class="muted small">(later)</span>`}</span></li>`).join("") +
+    `</ul></section>`;
+
+  const acts = (d.activity || []).filter((a) => a.type !== "rebalance").slice(-8).reverse();
+  html += `<section aria-label="recent activity"><h2>What the bot did</h2><ul class="feed">` +
+    (acts.length ? acts.map((a) => {
+      let txt = "";
+      if (a.type === "fill") txt = `${a.shares > 0 ? "Bought" : "Sold"} ${Math.abs(a.shares).toFixed(1)} shares of ${esc(a.asset)} at ${usd(a.price, 2)} (fee ${usd(a.cost, 2)})`;
+      else if (a.type === "halt") txt = `<b class="down">Safety stop: sold everything.</b> ${esc(a.reason || "")}`;
+      else if (a.type === "resume") txt = `Restarted: ${esc(a.reason || "")}`;
+      return `<li><span class="muted num">${day(a.date)}</span><span>${txt}</span></li>`;
+    }).join("") : `<li><span></span><span class="muted">No trades yet.</span></li>`) + `</ul></section>`;
+
+  const ex = (d.extra || [])[0];
+  html += `<details><summary>More details</summary><div class="body">
+    ${ex ? `<p><b>Comparison piggy bank</b> (SPY, bonds and gold): ${usd(ex.rep.equity)}, ${pct(ex.rep.return, 2)} since ${day(ex.rep.since)}, vs ${pct(ex.rep.benchmark, 2)} for a 60/40 mix.</p>` : ""}
+    ${t.date ? `<p><b>SPY on ${day(t.date)}</b>: closed at ${usd(t.close, 2)}, ${pct(t.day_return, 2)} on the day, ${pct(t.pct_above_200d, 1)} above its 200-day average.</p>` : ""}
+    ${d.facts ? `<p><b>A SPY fact:</b> since 1993, almost all of SPY's growth happened overnight (${pct(d.facts.growth_overnight, 0)}), not during the trading day (${pct(d.facts.growth_intraday, 0)}).</p>` : ""}
+    <p class="muted small">All money here is practice money. Updated ${esc(d.generated)}.</p></div></details>`;
+
+  app.replaceChildren($(html));
+}
+
+fetch("data.json").then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
+  .then(render)
+  .catch((e) => {
+    document.getElementById("app").replaceChildren($(`<div class="top"><h1>SPY piggy bank</h1></div>
+      <section><p>The latest numbers could not be loaded (${esc(e.message)}). Try again in a minute.</p></section>`));
+  });
+</script>

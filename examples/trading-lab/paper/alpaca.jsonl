@@ -1,0 +1,11 @@
+{"type": "submit", "order_id": "99484b56-2bda-4708-a070-c4548d53b6fe", "date": "2026-10-23", "symbol": "SPY", "side": "buy", "notional": "99500.00", "target_weight": 1.0, "assumed_close": 759.969970703125}
+{"type": "mark", "date": "2026-10-23", "equity": 100000.0, "spy_value": 0.0, "target_weight": 1.0}
+{"type": "fill", "order_id": "99484b56-2bda-4708-a070-c4548d53b6fe", "date": "2026-10-26", "side": "buy", "qty": 130.484543786, "price": 762.542345, "assumed_close": 759.969970703125, "vs_assumed_bps": 33.85, "open": 762.25, "vs_open_bps": 3.84}
+{"type": "mark", "date": "2026-10-26", "equity": 100363.75, "spy_value": 99863.735896, "target_weight": 1.0}
+{"type": "mark", "date": "2026-10-27", "equity": 101018.77, "spy_value": 100518.768306, "target_weight": 1.0}
+{"type": "mark", "date": "2026-10-28", "equity": 100906.55, "spy_value": 100406.551598, "target_weight": 1.0}
+{"type": "mark", "date": "2026-10-29", "equity": 100241.08, "spy_value": 99741.080425, "target_weight": 1.0}
+{"type": "mark", "date": "2026-10-30", "equity": 99088.82, "spy_value": 98588.823612, "target_weight": 1.0}
+{"type": "mark", "date": "2026-11-02", "equity": 98762.69, "spy_value": 98262.690543, "target_weight": 1.0}
+{"type": "mark", "date": "2026-11-03", "equity": 99069.33, "spy_value": 98569.329221, "target_weight": 1.0}
+{"type": "mark", "date": "2026-11-04", "equity": 100729.09, "spy_value": 100229.092618, "target_weight": 1.0}
