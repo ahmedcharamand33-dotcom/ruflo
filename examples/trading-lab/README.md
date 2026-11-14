@@ -162,6 +162,15 @@ Volatility control's "half the worst drop" held only since 2013; over 98 years i
 in 2000-02. The trend rule cut every major crash except the fast 2020 V-shape, where it sold low and
 bought back higher. Both rules were pre-registered before this test; nothing was tuned.
 
+### Tested and rejected: 1.25x while above the line (2026-11-14, trial 7)
+
+Written down before testing (Gayed & Bilello 2016, "Leverage for the Long Run"): hold 1.25x
+while above the 200-day average, cash otherwise, borrowing at T-bill + 1%. On 1928-today:
+12.3%/yr vs 10.7%, but worst drop -55% vs -47%, worst year -25% vs -20%, Sharpe 0.81 vs 0.87;
+P(beats the 1x rule's Sharpe, 7 trials) 3%. More return only by taking more risk, so the live
+rule stays at 1x. (`run_backtest` caps holdings at 1x on purpose; the test computed returns
+directly.) Any further SPY hypothesis is trial 8.
+
 ### Real-money gates (`python -m trading_lab readiness`)
 
 Measured from the journal, so they cannot be argued into a pass: at least 126 trading days of paper
